@@ -14,4 +14,4 @@
 
 """Critic agent for identifying and verifying statements using search tools."""
 
-from .agent import roborock_agent
+from .roborock_agent import roborock_agent
