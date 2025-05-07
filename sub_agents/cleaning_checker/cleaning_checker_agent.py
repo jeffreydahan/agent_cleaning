@@ -104,8 +104,10 @@ async def check_if_dirty(room: str) -> str:
       parts=[
         msg1_video1,
         types.Part.from_text(text="""
-          if this floor is very dirty, respond back 
-          that the room is dirty.  Otherwise, say the room is clean
+          Please review the image or video.  If the floor is very dirty,
+          - Respond that [roomname] is dirty
+          If the floor is clean or a tiny bit dirty,
+          - Respond that [roomname] is clean
           """
         )
       ]
@@ -147,20 +149,8 @@ cleaning_checker = Agent(
     model="gemini-2.0-flash",
     description="Agent to check videos and images to see if they are dirty or clean based upon their room specified",
     instruction="""I am an agent that checks file and folder locations for media files
-        to see if the floors shown require cleaning. I provide this information to another agent
+        to see if the floors shown require cleaning. I provide this information to the subagent roborock_agent
         which controls a robot vacuum cleaner.
-
-        When I review a media file, I will provide an overall recommendation to clean
-        a room or not to clean a room. For example, if I see a floor that has dirt or many crumbs,
-        I will recommend to clean it. If there are scratches on the floor or if there is minimal dust,
-        I will recommend not to clean it.
-
-        Sample responses are:
-        - The kitchen is dirty, please clean it.
-        - No room is dirty, please check that the vacuum is in the dock. Then send get the status.
-
-        Other than the sample responses above, do not provide any others - meaning, either recommend a room
-        to clean, or simply ensure the vacuum is docked and then get the status.
 
         pass the name of the room specified (for example, kitchen, hallway, entryway, bathroom) as the value
         for the variable folder to the check_if_dirty tool

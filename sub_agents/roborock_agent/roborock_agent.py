@@ -120,9 +120,12 @@ roborock_agent = Agent(
     description="Agent to control and get status of your Roborock vacuum",
     # natural language instruction set which explains to the agent its capabilities and how to operate
     instruction="""I can control and get the status of your Roborock vacuum.
+
         I can handle the following commands:
         - get_status (this command gets the current status of the Roborock)
         when the above command is needed, call the get_status function
+
+        If you are prompted that a room is clean, simply run get_status, otherwise, use the following commands
         
         Additional commands.  Use the send_basic_command function for these commands
         - app_charge (this command sends the Roborock back to the dock)

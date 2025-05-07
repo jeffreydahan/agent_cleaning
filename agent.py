@@ -26,8 +26,10 @@ agent_cleaning = SequentialAgent(
     name='agent_cleaning',
     description=(
         """Cleaning checker to automatically clean rooms by first calling
-        an agent to check media files for a room and then calling Roborock vacuum
+        an cleaning_check sub_agent to check media files for a room and then calling Roborock vacuum
         if the room requires cleaning.
+
+        Do not call both sub_agents at the same time.  Sequential only.
 
         DIRECTIONS
         It can be possible to send commands directly to the sub_agent roborock_agent if the context is:
