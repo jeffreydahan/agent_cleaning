@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""LLM Auditor for verifying & refining LLM-generated answers using the web."""
+"""Agent to assist with identifying a room floor that needs to be cleaned
+and sends the vacuum to this location."""
 
 from . import agent
