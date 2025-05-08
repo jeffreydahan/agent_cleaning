@@ -2,3 +2,4 @@
 /.venv
 /__pycache__
 .cloud_run_setup
+*/__pycache__
