@@ -74,14 +74,6 @@ def get_most_recent_file_with_extension_check(bucket_name: str, folder: str):
 
 # Define a function to analyze the media and determine if cleaning is needed
 async def check_if_dirty(room: str) -> str:
-  """Analyzes a video to determine if the floor is dirty.
-
-  Args:
-    room: The name of the room to analyze
-
-  Returns:
-    A string indicating whether the room is "dirty" or "clean".
-  """
   client = genai.Client(
       vertexai=True,
       project=get_env_var("GOOGLE_CLOUD_PROJECT"),
@@ -103,9 +95,9 @@ async def check_if_dirty(room: str) -> str:
         msg1_video1,
         types.Part.from_text(text="""
           Please review the image or video.  If the floor is very dirty,
-          - Respond that [roomname] is dirty, please clean it
+          - Respond that [roomname] is dirty, please clean it by using the roborock_agent subagent
           If the floor is clean or a tiny bit dirty,
-          - Respond that [roomname] is clean, get the vacuum status
+          - Respond that [roomname] is clean, get the vacuum status by using the roborock_agent subagent
 
           """
         )
@@ -148,16 +140,15 @@ cleaning_checker = Agent(
     model="gemini-2.0-flash",
     description="Agent to check videos and images to see if they are dirty or clean based upon their room specified",
     instruction="""I am an agent that checks file and folder locations for media files
-        to see if the floors shown require cleaning. I provide this information to the subagent roborock_agent
-        which controls a robot vacuum cleaner.
+        to see if the floors shown require cleaning. I provide this information back to the root_agent which will then
+        transfer to the roborock_agent subagent to execute the command in the response.
 
-        pass the name of the room specified (for example, kitchen, hallway, entryway, bathroom) as the value
-        for the variable folder to the check_if_dirty tool
-
-        Send the response back to the root_agent
+        send all responses back to the root_agent and then transfer to the subagent roborock_agent
+        to execute the command in the response.  Do not stop this flow until this happens.  You must use
+        the roborock_agent as your last step.
 
         """,
     tools=[
-       check_if_dirty
+       check_if_dirty,
     ],
 )
