@@ -3,3 +3,4 @@
 /__pycache__
 .cloud_run_setup
 */__pycache__
+*/*/__pycache__
