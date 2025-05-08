@@ -4,3 +4,4 @@
 .cloud_run_setup
 */__pycache__
 */*/__pycache__
+.commands
