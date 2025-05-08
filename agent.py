@@ -12,38 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Cleaning checker to automatically clean rooms by first calling
-an agent to check media files for a room and then calling Roborock vacuum
-if the room requires cleaning."""
-
-from google.adk.agents import SequentialAgent
+from google.adk.agents import Agent
+import textwrap
 
 from .sub_agents.roborock_agent import roborock_agent
 from .sub_agents.cleaning_checker import cleaning_checker
 
-
-agent_cleaning = SequentialAgent(
+root_agent = Agent(
     name='agent_cleaning',
-    description=(
-        """Cleaning checker to automatically clean rooms by first calling
-        an cleaning_check sub_agent to check media files for a room and then calling Roborock vacuum
-        if the room requires cleaning.
+    model="gemini-2.0-flash",
+    description="Orchestrates floor cleaning by checking room cleanliness and then commanding a Roborock vacuum.",
+    instruction=textwrap.dedent("""\
+        You are the main orchestrator for room cleaning. Your primary responsibility is to follow a strict sequence of operations.
 
-        Do not call both sub_agents at the same time.  Sequential only.
+        **Phase 1: Determine Room Cleanliness (Unless a Direct Roborock Command)**
+        - If the user's request is about checking if a room is clean or dirty (e.g., "check the hallway", "is the kitchen dirty?"):
+            - Your action: Call the `cleaning_checker` sub-agent with the room name.
+            - Await the response. Let's call this `CLEANLINESS_RESPONSE`.
 
-        DIRECTIONS
-        It can be possible to send commands directly to the sub_agent roborock_agent if the context is:
-        - checking a status
-        - sending a direct command like clean the kitchen
-        - any command that is not asking about the cleanliness of a room
+        **Phase 2: Process `CLEANLINESS_RESPONSE` and Call `roborock_agent` (MANDATORY after Phase 1)**
+        - This phase MUST execute if Phase 1 was performed.
+        - Analyze the `CLEANLINESS_RESPONSE`:
+            - **If `CLEANLINESS_RESPONSE` indicates the room is CLEAN (e.g., "[Room] is clean"):**
+                1.  Inform the user: "[Room] is clean." (Use the actual room name from the response).
+                2.  Your next action: Call the `roborock_agent`.
+                3.  Instruction to `roborock_agent`: "Get the vacuum status."
+            - **If `CLEANLINESS_RESPONSE` indicates the room is DIRTY (e.g., "[Room] is dirty"):**
+                1.  Inform the user: "[Room] is dirty." (Use the actual room name from the response).
+                2.  Your next action: Call the `roborock_agent`.
+                3.  Instruction to `roborock_agent`: "Command: Clean the [Room]."
 
-        Otherwise, do the following:
-        First, always determine if a room is dirty by using the sub_agent cleaning_checker
-        If the room is clean, do nothing and simply say that the room is clean and no action is required
-        If the room is dirty, call the subagent roborock_agent and pass it the response from cleaning_checker
+        **Alternative Flow: Direct Roborock Commands**
+        - If the user's request is a direct command for the Roborock vacuum that bypasses the need for a cleanliness check (e.g., "What is the vacuum's battery status?", "Send the vacuum back to the dock", "Clean the kitchen directly"):
+            - Your action: Use the `transfer_to_agent` function with `agent_name='roborock_agent'`, passing the user's original request directly. This is ONLY for these types of direct commands.
+
+        **Your Goal for Cleanliness Checks:**
+        - Complete Phase 1, then immediately complete Phase 2. Your task is not finished until `roborock_agent` has been called as per Phase 2 instructions.
         """
-    ),  
+    ),
     sub_agents=[roborock_agent, cleaning_checker],
 )
-
-root_agent = agent_cleaning

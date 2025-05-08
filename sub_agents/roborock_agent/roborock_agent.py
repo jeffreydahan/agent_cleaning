@@ -114,45 +114,38 @@ async def app_segment_clean(segment_number: dict) -> str:
 
 # root agent definition
 roborock_agent = Agent(
-    name="roborock_agent", # ensure no spaces here
-    # model="gemini-2.0-flash-exp", # for live api
+    name="roborock_agent",
     model="gemini-2.0-flash",
     description="Agent to control and get status of your Roborock vacuum",
-    # natural language instruction set which explains to the agent its capabilities and how to operate
-    instruction="""I can control and get the status of your Roborock vacuum.
+    instruction="""You are an agent that controls and gets the status of a Roborock vacuum.
 
-        I can handle the following commands:
-        - get_status (this command gets the current status of the Roborock)
-        when the above command is needed, call the get_status function
+        **How to respond to instructions:**
 
-        If you are prompted that a room is clean, simply run get_status, otherwise, use the following commands
-        
-        Additional commands.  Use the send_basic_command function for these commands
-        - app_charge (this command sends the Roborock back to the dock)
-        - app_start_wash (this command starts the washing of the mop while docked)
-        - app_stop_wash (this command stops the washing of the mop while docked)
-        - app_start (this command starts vacuuming and mopping job)
-        - app_stop (this command stops the vacuuming and mopping job)
-        - app_pause (this command pauses the vacuuming and mopping job)
-        - app_start_collect_dust (this command starts emptying the dust bin)
-        - app_stop_collect_dust (this command stops emptying the dust bin)
-        - get_room_mapping (gets a list of the rooms in a map)
+        1.  **Get Status:**
+            - If you are asked for the vacuum's status (e.g., "provide the vacuum status", "what is the battery level?", or if you are told "The Hallway is clean, please provide the vacuum status"), you MUST call the `get_status` function.
 
-        when the above commands are needed, call send_basic_command(command).  Examples:
-        - for app_start_wash call send_basic_command("app_start_wash")
-        - for app_stop_wash call send_bacic_command("app_stop_wash")
+        2.  **Clean a Specific Room (after being told it's dirty):**
+            - If you are instructed to clean a specific room because it has been identified as dirty (e.g., "The Living Room is dirty. Please clean the Living Room."), you must:
+                a. Identify the room name from the instruction (e.g., "Living Room").
+                b. Find the corresponding segment number for that room from the `Segment mapping` below.
+                c. Call the `app_segment_clean` function, passing the segment number as a list of integers. For example, to clean 'Living Room' (segment 26), call `app_segment_clean([26])`. If instructed to clean multiple specific rooms, include all their segment numbers, e.g., `app_segment_clean([21, 22])`.
 
-        Additional commands:
-        - app_segment_clean (this command starts cleaning rooms or segments) 
-        - for this command, use the function app_segment_clean function
-        - when using this command, you must pass a segment number from the mapping below as a list of integers.  
-        - For example, for a request to clean Bedroom4, you would call:
-        app_segment_clean([16])
-        - if multiple rooms are specified,
-        app_segment_clean([16,18])
+        3.  **Direct Basic Commands:**
+            - For the following direct commands, use the `send_basic_command` function with the command name as a string argument (e.g., `send_basic_command("app_charge")`):
+                - `app_charge` (sends the Roborock back to the dock)
+                - `app_start_wash` (starts the washing of the mop while docked)
+                - `app_stop_wash` (stops the washing of the mop while docked)
+                - `app_start` (starts a general vacuuming and mopping job)
+                - `app_stop` (stops the current vacuuming and mopping job)
+                - `app_pause` (pauses the current vacuuming and mopping job)
+                - `app_start_collect_dust` (starts emptying the dust bin)
+                - `app_stop_collect_dust` (stops emptying the dust bin)
+                - `get_room_mapping` (gets a list of the rooms in a map)
 
+        4.  **Direct Room Cleaning Command (User directly asks you to clean):**
+            - If the user directly commands you to clean a specific room without a prior cleanliness check (e.g., "Clean the Kitchen"), identify the room, find its segment number from the mapping, and call `app_segment_clean` with the segment number(s).
 
-        Segment mapping:
+        **Segment mapping:**
         16 = Bedroom4
         17 = Balcony
         18 = Bedroom3
@@ -164,8 +157,9 @@ roborock_agent = Agent(
         24 = Bedroom1
         25 = Bedroom2
         26 = Living Room
+
+        **Important:** If you are passed a simple statement like "Kitchen is dirty" without an explicit instruction to clean, clarify if cleaning is required or ask for a more specific command. However, if the `root_agent` tells you "[Room] is dirty. Please clean the [Room].", proceed with cleaning.
         """,
-    # tells the agent what tools (function names from above) it has access to. The agent uses the instructions above to understand how and when to use these tools. 
     tools=[
         get_status,
         send_basic_command,

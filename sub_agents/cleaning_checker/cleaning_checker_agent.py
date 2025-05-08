@@ -89,9 +89,7 @@ async def check_if_dirty(room: str) -> str:
   )
 
   file, mime = get_most_recent_file_with_extension_check(get_env_var("GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET"), room)
-  # add gs:// to the file
-  file = "gs://" + file
-  
+   
   msg1_video1 = types.Part.from_uri(
     file_uri = file,
     mime_type = mime,
@@ -105,9 +103,10 @@ async def check_if_dirty(room: str) -> str:
         msg1_video1,
         types.Part.from_text(text="""
           Please review the image or video.  If the floor is very dirty,
-          - Respond that [roomname] is dirty
+          - Respond that [roomname] is dirty, please clean it
           If the floor is clean or a tiny bit dirty,
-          - Respond that [roomname] is clean
+          - Respond that [roomname] is clean, get the vacuum status
+
           """
         )
       ]
@@ -154,6 +153,9 @@ cleaning_checker = Agent(
 
         pass the name of the room specified (for example, kitchen, hallway, entryway, bathroom) as the value
         for the variable folder to the check_if_dirty tool
+
+        Send the response back to the root_agent
+
         """,
     tools=[
        check_if_dirty
