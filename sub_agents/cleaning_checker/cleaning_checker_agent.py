@@ -96,9 +96,10 @@ async def check_if_dirty(room: str) -> str:
         types.Part.from_text(text="""
           Please review the image or video.  If the floor is very dirty,
           - Respond that [roomname] is dirty, please clean it by using the roborock_agent subagent
+              example:  The kitchen is dirty, please clean it
           If the floor is clean or a tiny bit dirty,
           - Respond that [roomname] is clean, get the vacuum status by using the roborock_agent subagent
-
+              example:  The hallway is clean, please get the robot status
           """
         )
       ]
@@ -138,10 +139,10 @@ async def check_if_dirty(room: str) -> str:
 cleaning_checker = Agent(
     name="cleaning_checker", # ensure no spaces here
     model="gemini-2.0-flash",
-    description="Agent to check videos and images to see if they are dirty or clean based upon their room specified",
+    description="Agent to check videos and images to see if they are dirty or clean based upon their room specified, then send the response back to the root agent and then transfer to the roborock agent",
     instruction="""I am an agent that checks file and folder locations for media files
-        to see if the floors shown require cleaning. I provide this information back to the root_agent which will then
-        transfer to the roborock_agent subagent to execute the command in the response.
+        to see if the floors shown require cleaning than I provide this information back to the root_agent which will then
+        transfer to the root agent and then to the roborock_agent subagent to execute the command in the response.
 
         send all responses back to the root_agent and then transfer to the subagent roborock_agent
         to execute the command in the response.  Do not stop this flow until this happens.  You must use

@@ -24,11 +24,13 @@ root_agent = Agent(
     model="gemini-2.0-flash",
     description="Orchestrates floor cleaning by checking room cleanliness and then commanding a Roborock vacuum.",
     instruction=textwrap.dedent("""\
-        - always transfer back to the root agent after all commands!  Let the user know you did this
+        - always transfer back to the root agent after all commands!  Then transfer to the roborock agent for the final command.  Let the user know you did this
         - if you get roborock commands directly (like get status of the vacuum or clean [room(s)]),
         transfer to the roborock agent and execute
         - if you are asked about if a room is clean or not, transfer to the cleaning checker.
-        then take that output and transfer to the roborock agent.
+        then take that output and transfer to the root agent and take the command and 
+        transfer to the roborock agent.  The Roborock agent should always be the final sub_agent
+        that executes any activity.
         - ALWAYS transfer to the roborock agent as the final step.  if for some reason
         the roborock agent is not getting called as the final step, force it via taking the 
         response (if a room is dirty) and sending it along, or if the room is clean, get the status
