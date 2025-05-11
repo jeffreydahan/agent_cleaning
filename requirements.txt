@@ -26,7 +26,7 @@ google-api-core==2.25.0rc0
 google-api-python-client==2.169.0
 google-auth==2.40.1
 google-auth-httplib2==0.2.0
-google-cloud-aiplatform==1.91.0
+google-cloud-aiplatform==1.92.0
 google-cloud-appengine-logging==1.6.1
 google-cloud-audit-log==0.3.2
 google-cloud-bigquery==3.31.0
