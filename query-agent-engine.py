@@ -36,7 +36,7 @@ agent_engines_list = agent_engines.AgentEngine.list()
 if agent_engines_list:
     print("Existing Agent Engine deployments:")
     for engine in agent_engines_list:
-        print(f"- {engine.name}")
+        print(f"- {engine.name}")  # Or any other relevant attribute
         print(engine)
 else:
     print("No Agent Engine deployments found in this project and location.")
@@ -45,42 +45,49 @@ else:
 if agent_engines_list:
     # Get the resource name of the first deployed agent engine
     agent_engine_resource_name = agent_engines_list[0].name
-    # Extract the agent ID from the resource name
-    agent_engine_id = agent_engine_resource_name.split('/')[-1]
-    print(f"Using Agent Engine ID: {agent_engine_id}")
+    print(f"Using Agent Engine: {agent_engine_resource_name}")
 
     # Get the AgentEngine object by passing the resource name to the constructor
     agent_engine = agent_engines.AgentEngine(agent_engine_resource_name)
 
-#     # Create an AdkApp from the deployed agent
-#     app = reasoning_engines.AdkApp(agent=root_agent)  # Use root_agent here
+    # Create an AdkApp from the deployed agent
+    app = reasoning_engines.AdkApp(agent=root_agent)  # Use root_agent here
 
-#     # Now you can interact with the app (create sessions, query, etc.)
+    # Now you can interact with the app (create sessions, query, etc.)
 
-#     remote_session = app.create_session(user_id="u_456")
-#     print(f"Created session: {remote_session}")
+    remote_session = app.create_session(user_id="u_456")
+    print(f"Created session: {remote_session}")
 
+    # Test remote agent
+    # remote_session = remote_app.create_session(user_id="u_456")  # This line is removed
+    # print(f"Created session: {remote_session}")
 
-#     print("Querying the agent...")
-#     for event in app.stream_query(
-#         user_id="u_456",
-#         session_id=remote_session.id,
-#         message="Please clean the kitchen",
-#     ):
-#         print(event)  # Print the entire event
-#         if event.get('role') == 'user':
-#             print(f"Prompt: {event['content'][0]['text']}")
-#         elif event.get('role') == 'agent' and event['content'][0].get('tool_use'):
-#             tool_use = event['content'][0]['tool_use']
-#             if tool_use['tool_name'] == 'roborock_agent':
-#                 status = tool_use['output']['state']
-#                 battery = tool_use['output']['battery']
-#                 print(f"Status: {status}")
-#                 print(f"Battery: {battery}")
-#             else:
-#                 print(f"Tool Use: {tool_use['tool_name']}")
-#                 print(f"Tool Input: {tool_use['input']}")
-#                 print(f"Tool Output: {tool_use['output']}")
+    # List sessions for a user (optional, for verification)
+    # print(f"Listing sessions for user u_123: {remote_app.list_sessions(user_id='u_123')}")
 
-# else:
-#     print("No agent engines found. Cannot perform testing.")
+    # Get a specific session (optional, for verification)
+    # print(f"Getting session for user u_456: {remote_app.get_session(user_id='u_456', session_id=remote_session.id)}")
+
+    print("Querying the agent...")
+    for event in app.stream_query(
+        user_id="u_456",
+        session_id=remote_session.id,
+        message="Please get vacuum status",
+    ):
+        print(event)  # Print the entire event
+        if event.get('role') == 'user':
+            print(f"Prompt: {event['content'][0]['text']}")
+        elif event.get('role') == 'agent' and event['content'][0].get('tool_use'):
+            tool_use = event['content'][0]['tool_use']
+            if tool_use['tool_name'] == 'roborock_agent':
+                status = tool_use['output']['state']
+                battery = tool_use['output']['battery']
+                print(f"Status: {status}")
+                print(f"Battery: {battery}")
+            else:
+                print(f"Tool Use: {tool_use['tool_name']}")
+                print(f"Tool Input: {tool_use['input']}")
+                print(f"Tool Output: {tool_use['output']}")
+
+else:
+    print("No agent engines found. Cannot perform testing.")
