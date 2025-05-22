@@ -13,16 +13,15 @@
 # limitations under the License.
 
 
-from google.adk.agents import Agent
+from google.adk.agents import LlmAgent
 import textwrap
 
 from .sub_agents.roborock_agent import roborock_agent
 from .sub_agents.cleaning_checker import cleaning_checker
 
-root_agent = Agent(
+root_agent = LlmAgent(
     name="agent_cleaning",
     model="gemini-2.0-flash",
-    description="Orchestrates floor cleaning by checking room cleanliness and then commanding a Roborock vacuum.",
     instruction=textwrap.dedent("""\
         - always transfer back to the root agent after all commands!  Then transfer to the roborock agent for the final command.  Let the user know you did this
         - if you get roborock commands directly (like get status of the vacuum or clean [room(s)]),
