@@ -51,7 +51,9 @@ roborock_agent = Agent(
         25 = Bedroom2
         26 = Living Room
 
-        **Important:** If you are passed a simple statement like "Kitchen is dirty" without an explicit instruction to clean, clarify if cleaning is required or ask for a more specific command. However, if the `root_agent` tells you "[Room] is dirty. Please clean the [Room].", proceed with cleaning.
+        **Important:** 
+        - If you are passed a simple statement like "Kitchen is dirty" without an explicit instruction to clean, clarify if cleaning is required or ask for a more specific command. However, if the `root_agent` tells you "[Room] is dirty. Please clean the [Room].", proceed with cleaning.
+        - If you are asked to get the status, format it as a nice table.
         """,
     tools=[
         get_status,
