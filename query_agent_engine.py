@@ -22,7 +22,13 @@ def get_env_var(key):
 
 # Get environment variables
 project_id=get_env_var("GOOGLE_CLOUD_PROJECT")
-staging_bucket=get_env_var("GOOGLE_CLOUD_STORAGE_BUCKET")
+# Use the consistent staging bucket environment variable name
+# and ensure it has the 'gs://' prefix for vertexai.init()
+staging_bucket_name_from_env = get_env_var("GOOGLE_CLOUD_STORAGE_STAGING_BUCKET")
+if not staging_bucket_name_from_env.startswith("gs://"):
+    staging_bucket = f"gs://{staging_bucket_name_from_env}"
+else:
+    staging_bucket = staging_bucket_name_from_env
 location=get_env_var("GOOGLE_CLOUD_LOCATION")
 
 

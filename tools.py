@@ -121,7 +121,7 @@ def get_most_recent_file_with_extension_check(bucket_name: str, folder: str):
   extension is one of .mov, .mp4, .jpg, .jpeg, or .png.
 
   Args:
-    bucket_name: The name of the storage bucket.
+    bucket_name: The name of the storage bucket (can be with or without 'gs://' prefix).
     folder: The path of the folder in the storage bucket (should NOT end with a '/').
 
   Returns:
@@ -132,8 +132,10 @@ def get_most_recent_file_with_extension_check(bucket_name: str, folder: str):
                 or the most recent file's extension is not one of the allowed types.
   """
   client = storage.Client()
-  bucket = client.bucket(bucket_name)
-  print(f"Bucket name: {bucket.name}")
+  # Ensure bucket_name does not have gs:// prefix for client.bucket()
+  actual_bucket_name_for_api = bucket_name.replace("gs://", "")
+  bucket = client.bucket(actual_bucket_name_for_api)
+  print(f"Accessing GCS bucket: {bucket.name}")
 
   folder_prefix = folder + "/"
 
@@ -171,7 +173,7 @@ def get_most_recent_file_with_extension_check(bucket_name: str, folder: str):
     raise ValueError(f"Unrecognized file extension: '{file_extension}' for file '{most_recent_blob.name}'. "
                      f"Allowed extensions are: .mov, .mp4, .jpg, .jpeg, .png")
 
-  return f"gs://{bucket_name}/{most_recent_blob.name}", mime_type
+  return f"gs://{actual_bucket_name_for_api}/{most_recent_blob.name}", mime_type
 
 # Define a function to analyze the media and determine if cleaning is needed
 async def check_if_dirty(room: str) -> str:
