@@ -12,6 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Reviser agent for correcting inaccuracies based on verified findings."""
-
 from .cleaning_checker_agent import cleaning_checker

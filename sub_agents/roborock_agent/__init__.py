@@ -12,6 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Critic agent for identifying and verifying statements using search tools."""
-
 from .roborock_agent import roborock_agent

@@ -2,7 +2,7 @@
 # to Vertex AI Agent Engine
 
 # Import everything from the agent.py
-from agent import root_agent
+from .agent import root_agent
 
 # Import Vertex AI
 import vertexai
@@ -10,7 +10,7 @@ from vertexai.preview import reasoning_engines
 from vertexai import agent_engines
 
 # Import Tools
-from tools import get_env_var
+from .tools import get_env_var
 
 
 # Import packages to assist with writing/reading env variables
@@ -57,9 +57,9 @@ env_vars = {
 remote_app = agent_engines.create(
     agent_engine=root_agent,
     requirements=requirements_list,
-    display_name=get_env_var("APP_NAME"),
-    description="The Roborock Agent can control and get the status for the Roborock Vacuum",
-    extra_packages=["agent.py","tools.py"],
+    display_name=get_env_var("AGENT_NAME"),
+    description="The Roborock Agent can control and get the status for the Roborock Vacuum", # Ensure your agent.py and tools.py are in the agent_cleaning directory
+    extra_packages=["agent_cleaning/agent.py", "agent_cleaning/tools.py"],
     env_vars=env_vars
 )
 
