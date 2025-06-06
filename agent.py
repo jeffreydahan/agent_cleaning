@@ -13,16 +13,16 @@
 # limitations under the License.
 
 
-from google.adk.agents import LlmAgent
-import textwrap
+from google.adk.agents import Agent
 
 from .sub_agents.roborock_agent import roborock_agent
 from .sub_agents.cleaning_checker import cleaning_checker
 
-root_agent = LlmAgent(
+
+root_agent = Agent(
     name="agent_cleaning",
     model="gemini-2.0-flash",
-    instruction=textwrap.dedent("""\
+    instruction="""
         - always transfer back to the root agent after all commands!  Then transfer to the roborock agent for the final command.  Let the user know you did this
         - if you get roborock commands directly (like get status of the vacuum or clean [room(s)]),
         transfer to the roborock agent and execute
@@ -33,7 +33,6 @@ root_agent = LlmAgent(
         - ALWAYS transfer to the roborock agent as the final step.  if for some reason
         the roborock agent is not getting called as the final step, force it via taking the 
         response (if a room is dirty) and sending it along, or if the room is clean, get the status
-        """
-    ),
+        """,
     sub_agents=[roborock_agent, cleaning_checker],
 )
