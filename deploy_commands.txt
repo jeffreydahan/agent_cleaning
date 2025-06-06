@@ -3,4 +3,10 @@ cd ~/code/adk
 adk deploy cloud_run --project=$GOOGLE_CLOUD_PROJECT --region=$GOOGLE_CLOUD_LOCATION --service_name=$CLOUD_RUN_SERVICE_NAME --app_name=$CLOUD_RUN_APP_NAME --with_ui $AGENT_LOCAL_APP_DIR
 
 # Deploy to Agent Engine
+~/code/adk$ python3 -m agent_cleaning.deploy_to_agent_engine
 
+# Query from Agent Engine
+~/code/adk$ python3 agent_cleaning/query_agent_engine.py 
+
+# Deploy to Agentspace
+~/code/adk$ agent_cleaning/deploy_to_agentspace.sh

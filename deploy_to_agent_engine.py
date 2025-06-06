@@ -51,6 +51,7 @@ print(requirements_list)
 env_vars = {
     "ROBOROCK_USERNAME": get_env_var('ROBOROCK_USERNAME'),
     "ROBOROCK_PASSWORD": get_env_var('ROBOROCK_PASSWORD'),
+    "GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET": get_env_var('GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET'),
 }
 
 # Upload the ADK Agent to Agent Engine
