@@ -5,13 +5,13 @@ This is a Google Agent Development Kit (ADK) Multi-Agent system which can check 
 The following flow outlines how this Multi-Agent system operates
 - Cleaning Agent:  This agent handles the user request and agent/sub-agent responses.  It routes the agentic requests between the sub-agents as needed.
 - Cleaning Checker:  This sub-agent determines if a room's floor is clean or dirty.  As of now, there are static movies/images that can be reviewed inside of a Google Cloud Storage bucket.  This could be replaced with IP Cameras or even droneds.  The folder structure needs to have a subfolder for each room.  For example, if you have a home with a kitchen and hallway that you want to check, build the following in Google Cloud Storage.
-'''
+```
 GCS Bucket
 |--hallway
    |--movie.mov
 |--kitchen
    |--movie.mov
-'''
+```
 - Roborock Agent:  This sub-agent handles all Roborock operations
 
 ADK can be downloaded from here:
