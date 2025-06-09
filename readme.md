@@ -1,8 +1,18 @@
 # Background
-![image](https://github.com/user-attachments/assets/ea67fb7e-f4d5-4db2-aa2b-6e94a1e5b0fd)
+This is a Google Agent Development Kit (ADK) Multi-Agent system which can check if a location is clean or dirty and then send a Roborock vacuum to clean the location. The following is the high level architecture and flow:
+![image](https://github.com/user-attachments/assets/e0ce943d-aec5-4b78-9106-a595fc78a0d2)
 
-
-This is a Google Agent Development Kit (ADK) Multi-Agent system which can check if a location is clean or dirty and then send a Roborock vacuum to clean the location. 
+The following flow outlines how this Multi-Agent system operates
+- Cleaning Agent:  This agent handles the user request and agent/sub-agent responses.  It routes the agentic requests between the sub-agents as needed.
+- Cleaning Checker:  This sub-agent determines if a room's floor is clean or dirty.  As of now, there are static movies/images that can be reviewed inside of a Google Cloud Storage bucket.  This could be replaced with IP Cameras or even droneds.  The folder structure needs to have a subfolder for each room.  For example, if you have a home with a kitchen and hallway that you want to check, build the following in Google Cloud Storage.
+'''
+GCS Bucket
+|--hallway
+   |--movie.mov
+|--kitchen
+   |--movie.mov
+'''
+- Roborock Agent:  This sub-agent handles all Roborock operations
 
 ADK can be downloaded from here:
 - https://github.com/google/adk-python
@@ -13,10 +23,10 @@ Gemini Code Assist was extremely valuable with this effort and saved many hours 
 
 This agent allows for natural language interaction with your Roborock device. The Agent translates your natural language chat inputs into valid commanda by making use of the functions (tools) defined in the agent files file
 
-It makes use of the python-roborock library:
+This agent makes use of the python-roborock library:
 - https://github.com/Python-roborock/python-roborock
 
-# Current Features
+# Current Roborock Sub-Agent Features
 The current features are also listed in the agent.py root_agent instructions
 - get_status (this command gets the current status of the Roborock)
 - app_charge (this command sends the Roborock back to the dock)
@@ -57,24 +67,8 @@ requirements set for later deployment below.
 
 Then create a .env file at the root of the directory with the following information (you can rename the 'rename.evn' file to serve as the basis for the '.env' file):
 
-```
-# set variables for credentials
-
-# Set use if Vertex AI to true or false
-GOOGLE_GENAI_USE_VERTEXAI=FALSE
-# used of Vertex AI is set to true
-GOOGLE_CLOUD_PROJECT="your gcp project id"
-GOOGLE_CLOUD_LOCATION="preferred region (eg:  europe-west4)"
-GOOGLE_CLOUD_QUOTA_PROJECT="your gcp project id9"
-GOOGLE_CLOUD_STORAGE_BUCKET="gs://[your staging directory]" # If you deploy to cloud run
-# used of Vertex AI is set to false
-GOOGLE_API_KEY="AI Studio key" 
-
-ROBOROCK_USERNAME = "your Roborock user id (email)"
-ROBOROCK_PASSWORD = "your Roborock password"
-```
 # Running locally
-From the directory above roborock-s8-agent,
+From the directory above agent_cleaning,
 ```
 adk web
 ```
