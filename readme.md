@@ -103,19 +103,19 @@ There are some additional options be deloy to Google Agent Engine
 Make sure you run the scripts below from the same folder as 'agent.py'
 
 In order to deploy the agent to Agent Engine, run the following command:
-'''
+```
 python3 deploy_to_agent_engine.py
-'''
+```
 This will take 5 to 10 for the deployment to complete.  At this point, you can run some test queries using 'query_agent_engine.py'.  You can modify the 'message' variable towards the bottom of the file to adjust your query.  You will see the output in the console.  To run the query, run the following command:
-'''
+```
 python3 query_agent_engine.py
-'''
+```
 # Bonus #2 - Deploy the Agent to Google Agentspace
 Google Agentspace is Google's Agentic AI and Enterprise search hub.  
 - https://cloud.google.com/agentspace/docs/overview
 You can deploy custom agents to this platform.  Run the following command:
-'''
+```
 deploy_to_agentspace.sh
-'''
+```
 Next you will see your custom agent in the 'Agents' section of Agentspace under 'Your Agents'.  Click the agent to interact. 
 ![image](https://github.com/user-attachments/assets/29aff263-8a1d-4ddf-8c20-f34b354a8611)
