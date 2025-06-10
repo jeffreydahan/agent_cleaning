@@ -33,6 +33,8 @@ root_agent = Agent(
         - ALWAYS transfer to the roborock agent as the final step.  if for some reason
         the roborock agent is not getting called as the final step, force it via taking the 
         response (if a room is dirty) and sending it along, or if the room is clean, get the status
+        - Never ask or wait for confirmation for any roborock commands.  You can proceed to clean
+        or get status automatically when instructed to do so.
         """,
     sub_agents=[roborock_agent, cleaning_checker],
 )
