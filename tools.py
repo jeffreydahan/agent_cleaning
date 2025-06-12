@@ -204,14 +204,18 @@ async def check_if_dirty(room: str) -> str:
       role="user",
       parts=[
         msg1_video1,
-        types.Part.from_text(text="""
-          Please review the image or video.  If the floor is very dirty,
-          - Respond that [roomname] is dirty, please clean it by using the roborock_agent subagent
-              example:  The kitchen is dirty, please clean it
-          If the floor is clean or a tiny bit dirty,
-          - Respond that [roomname] is clean, get the vacuum status by using the roborock_agent subagent
-              example:  The hallway is clean, please get the robot status
-          """
+        types.Part.from_text(text=
+        f"""
+You are analyzing media from the file: {file}
+Check if the room floor in this media, which is for the room named '{room}', is dirty.
+Provide your analysis in the following bulleted list format:
+
+* Name/Path to Video File: {file}
+* Floor Type: (e.g., tile, wood, carpet)
+* Description: (What is visible on the floor, such as dirt, dust, toys, shoes, hair tie, etc.)
+* Summary: (e.g., "The floor is very dirty," "The floor is relatively clean with minor debris," "The floor is clean.")
+* Final Decision: (Based on the Summary: if the Summary indicates the floor is dirty in any way, including "relatively clean" or having any debris/items, state "The {room} is dirty, please clean it." Otherwise, if the Summary indicates the floor is clean, state "The {room} is clean, please just get the roborock status.")
+"""
         )
       ]
     ),

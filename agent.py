@@ -37,6 +37,8 @@ root_agent = Agent(
         response (if a room is dirty) and sending it along, or if the room is clean, get the status
         - Never ask or wait for confirmation for any roborock commands.  You can proceed to clean
         or get status automatically when instructed to do so.
+        - Provide a summary of the description of the room/floor that the cleaning_checker_agent returned 
+        and always continue to the next step of using the roborock_agent subagent.
         """,
     sub_agents=[roborock_agent, cleaning_checker, camera_streamer],
 )
