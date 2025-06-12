@@ -1,15 +1,21 @@
 import os  # Import the os module for environment variables
 from dotenv import load_dotenv
+import time
+from datetime import datetime
 
 # Import GenAI libraries
 from google import genai
 from google.genai import types
 from google.cloud import storage
 
+
 # Import Roborock libraries
 from roborock import HomeDataProduct, DeviceData, RoborockCommand
 from roborock.version_1_apis import RoborockMqttClientV1, RoborockLocalClientV1
 from roborock.web_api import RoborockApiClient
+
+# Import Video/Camera libraries
+import cv2
 
 
 load_dotenv()  # Load environment variables from .env file
@@ -239,3 +245,155 @@ async def check_if_dirty(room: str) -> str:
     response_text += chunk.text
 
   return response_text.strip()
+
+# Function to copy local file to folder in google cloud storage
+async def copy_to_google_cloud_storage(source_file_name: str, room: str) -> str:
+  # GCS Configuration
+  gcs_bucket_name = get_env_var("GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET")
+  if gcs_bucket_name and gcs_bucket_name.startswith("gs://"):
+    gcs_bucket_name = gcs_bucket_name[5:] # Remove "gs://" prefix
+    print(f"Note: Stripped 'gs://' prefix. Using GCS bucket name: {gcs_bucket_name}")
+
+  gcs_bucket_folder = get_env_var("GOOGLE_CLOUD_DEMO_BUCKET_FOLDER")
+  # Upload to GCS
+  if gcs_bucket_name:
+    destination_blob_name = f"{gcs_bucket_folder.strip('/')}/{os.path.basename(source_file_name)}" if gcs_bucket_folder else os.path.basename(source_file_name)
+      
+  # Upload a file to the bucket."""
+  if not gcs_bucket_name:
+    print("Error: GCS bucket name (GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET) is not set. Skipping upload.")
+    return False
+  try:
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(gcs_bucket_name)
+    blob = bucket.blob(destination_blob_name)
+
+    blob.upload_from_filename(source_file_name)
+    print(f"File {source_file_name} uploaded to gs://{gcs_bucket_name}/{destination_blob_name}.")
+    return True
+  except Exception as e:
+    print(f"Error uploading file {source_file_name} to GCS: {e}")
+    return False
+
+# Function to handle capturing a camera stream from a remote camera
+async def capture_camera_stream(room: str) -> str:
+  # --- Configuration ---
+  print("Attempting to capture camera stream...")
+  # Retrieve RTSP credentials and path from environment variables
+  rtsp_username = get_env_var("RTSP_USERNAME")
+  rtsp_password = get_env_var("RTSP_PASSWORD")
+  rtsp_ip_address = get_env_var("RTSP_IP_ADDRESS")
+  rtsp_stream_path = get_env_var("RTSP_STREAM_PATH")
+  recording_duration_seconds_str = get_env_var("RECORD_DURATION_SECONDS")
+
+  print(f"RTSP_USERNAME: {'Set' if rtsp_username else 'Not Set'}")
+  # Avoid printing password directly, but check if it's set
+  print(f"RTSP_PASSWORD: {'Set' if rtsp_password else 'Not Set'}")
+  print(f"RTSP_IP_ADDRESS: {rtsp_ip_address}")
+  print(f"RTSP_STREAM_PATH: {rtsp_stream_path}")
+  print(f"RECORD_DURATION_SECONDS: {recording_duration_seconds_str}")
+
+  rtsp_url = f"rtsp://{rtsp_username}:{rtsp_password}@{rtsp_ip_address}/{rtsp_stream_path}"
+  recording_duration_seconds = int(recording_duration_seconds_str)
+  fps_target = 25 # Default FPS if stream doesn't provide it, or target FPS for recording
+
+  # --- Video Capture ---
+  print(f"Attempting to connect to RTSP stream: {rtsp_url}")
+  cap = cv2.VideoCapture(rtsp_url)
+  print(f"cv2.VideoCapture initiated. Checking if stream is opened...")
+  # Check if the stream opened successfully
+  if not cap.isOpened():
+      print(f"Error: Could not open video stream from {rtsp_url}")
+      return f"Error: Could not open video stream from {rtsp_url}. Please check the URL, credentials, camera status, and network connectivity."
+
+  print(f"Successfully connected to the RTSP stream: {rtsp_url}")
+
+  # Get video properties from the stream
+  frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+  frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+  stream_fps = cap.get(cv2.CAP_PROP_FPS)
+  if stream_fps > 0:
+      fps_record = stream_fps
+      print(f"Detected stream FPS: {stream_fps:.2f}")
+  else:
+      fps_record = fps_target
+      print(f"Could not detect stream FPS. Using target FPS for recording: {fps_record}")
+
+  print(f"Stream properties: Resolution: {frame_width}x{frame_height}, Recording FPS: {fps_record}")
+
+  # Generate a unique filename with a timestamp
+  timestamp = datetime.now().strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] # Milliseconds
+  video_subfolder = "videos"
+  if not os.path.exists(video_subfolder):
+    os.makedirs(video_subfolder)
+
+  output_filename = f"{video_subfolder}/{room}_camera_stream_{timestamp}.avi"
+
+  print(f"Generated output filename: {output_filename}")
+
+  fourcc = cv2.VideoWriter_fourcc(*'XVID')
+  out = cv2.VideoWriter(output_filename, fourcc, fps_record, (frame_width, frame_height))
+  print(f"cv2.VideoWriter initiated. Checking if writer is opened...")
+
+  if not out.isOpened():
+    print(f"Error: Could not create video writer for {output_filename}")
+    print("This might be due to an unsupported codec or missing dependencies.")
+    cap.release()
+    return (f"Error: Could not create video writer for {output_filename}. "
+      "This might be due to an unsupported codec or missing dependencies. "
+      "On some systems, you might need to install 'ffmpeg' or 'libx264-dev'."
+      "Try a different 'fourcc' code (e.g., 'mp4v', 'H264', 'XVID').")
+
+
+  print(f"Saving video to: {output_filename}")
+  print(f"Recording for {recording_duration_seconds} seconds...")
+
+  # --- Recording Loop ---
+  start_time = time.time()
+  frame_count = 0
+
+  print("Starting recording loop...")
+  while True:
+    ret, frame = cap.read()
+
+    if not ret:
+        print("Error: Could not read frame from stream or stream ended.")
+        # Consider if this is an error or just end of a short stream
+        break
+
+    out.write(frame)
+    frame_count += 1
+
+    elapsed_time = time.time() - start_time
+    if elapsed_time >= recording_duration_seconds:
+        print(f"Recorded {recording_duration_seconds} seconds.")
+        break
+
+  print(f"Total frames recorded: {frame_count}")
+
+  # --- Cleanup ---
+  cap.release()
+  out.release()
+  cv2.destroyAllWindows()
+
+  print(f"Video capture process finished. Local file should be: {output_filename}")
+
+
+  if os.path.exists(output_filename):
+    print(f"Confirmed: Local file '{output_filename}' exists.")
+    print(f"File '{output_filename}' successfully created with size: {os.path.getsize(output_filename) / (1024*1024):.2f} MB")
+
+    # Upload to GCS
+    file_copied_to_gcs = await copy_to_google_cloud_storage(output_filename, room)
+    if file_copied_to_gcs:
+       # Delete local file after successful upload
+        try:
+            os.remove(output_filename)
+            print(f"Successfully deleted local file: {output_filename}")
+        except OSError as e:
+            print(f"Error deleting local file {output_filename}: {e}")
+            return f"Video captured and uploaded to GCS, but failed to delete local file: {output_filename}. Error: {e}"
+        return f"Video successfully captured, uploaded to GCS as gs://{os.getenv('GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET')}/{room}/{os.path.basename(output_filename)}, and local file deleted."
+  else:
+    print(f"Error: File '{output_filename}' was not created or found locally.")
+    return f"Error: Video file '{output_filename}' was not created locally after recording attempt. Stream might have opened but failed to write frames."

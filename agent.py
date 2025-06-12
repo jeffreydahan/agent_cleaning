@@ -17,6 +17,8 @@ from google.adk.agents import Agent
 
 from .sub_agents.roborock_agent import roborock_agent
 from .sub_agents.cleaning_checker import cleaning_checker
+from .sub_agents.ip_camera_agent import camera_streamer
+
 
 
 root_agent = Agent(
@@ -26,9 +28,9 @@ root_agent = Agent(
         - always transfer back to the root agent after all commands!  Then transfer to the roborock agent for the final command.  Let the user know you did this
         - if you get roborock commands directly (like get status of the vacuum or clean [room(s)]),
         transfer to the roborock agent and execute
-        - if you are asked about if a room is clean or not, transfer to the cleaning checker.
-        then take that output and transfer to the root agent and take the command and 
-        transfer to the roborock agent.  The Roborock agent should always be the final sub_agent
+        - if you are asked about if a room is clean or not, transfer to the camera_streamer to capture the video
+        of that room.  Then transfer back to the root agent to send the next command to the cleaning_checker
+        - The Roborock agent should always be the final sub_agent
         that executes any activity.
         - ALWAYS transfer to the roborock agent as the final step.  if for some reason
         the roborock agent is not getting called as the final step, force it via taking the 
@@ -36,5 +38,5 @@ root_agent = Agent(
         - Never ask or wait for confirmation for any roborock commands.  You can proceed to clean
         or get status automatically when instructed to do so.
         """,
-    sub_agents=[roborock_agent, cleaning_checker],
+    sub_agents=[roborock_agent, cleaning_checker, camera_streamer],
 )
