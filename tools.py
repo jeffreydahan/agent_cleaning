@@ -118,7 +118,7 @@ async def app_segment_clean(segment_number: dict) -> str:
 # Function to select the most recent file in a storage bucket folder
 def get_most_recent_file_with_extension_check(bucket_name: str, folder: str):
   """Gets the most recent file in a GCS bucket folder and checks if its
-  extension is one of .mov, .mp4, .jpg, .jpeg, or .png.
+  extension is one of .mov, .mp4, .jpg, .jpeg, .png, or .avi.
 
   Args:
     bucket_name: The name of the storage bucket (can be with or without 'gs://' prefix).
@@ -169,9 +169,11 @@ def get_most_recent_file_with_extension_check(bucket_name: str, folder: str):
     mime_type = "image/jpeg"
   elif file_extension == ".png":
     mime_type = "image/png"
+  elif file_extension == ".avi":
+    mime_type = "video/x-msvideo"
   else:
     raise ValueError(f"Unrecognized file extension: '{file_extension}' for file '{most_recent_blob.name}'. "
-                     f"Allowed extensions are: .mov, .mp4, .jpg, .jpeg, .png")
+                     f"Allowed extensions are: .mov, .mp4, .jpg, .jpeg, .png, .avi")
 
   return f"gs://{actual_bucket_name_for_api}/{most_recent_blob.name}", mime_type
 
