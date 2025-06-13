@@ -22,7 +22,6 @@ from .sub_agents.ip_camera_agent import camera_streamer
 # Import prompts
 from .prompts import root_agent_instruction
 
-
 root_agent = Agent(
     name="agent_cleaning",
     model="gemini-2.0-flash",

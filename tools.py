@@ -273,7 +273,7 @@ async def copy_to_google_cloud_storage(source_file_name: str, room: str) -> str:
     blob = bucket.blob(destination_blob_name)
 
     blob.upload_from_filename(source_file_name)
-    print(f"File {source_file_name} uploaded to gs://{gcs_bucket_name}/{destination_blob_name}.")
+    print(f"File {source_file_name} uploaded to {gcs_bucket_name}/{destination_blob_name}.")
     return True
   except Exception as e:
     print(f"Error uploading file {source_file_name} to GCS: {e}")
@@ -397,7 +397,7 @@ async def capture_camera_stream(room: str) -> str:
         except OSError as e:
             print(f"Error deleting local file {output_filename}: {e}")
             return f"Video captured and uploaded to GCS, but failed to delete local file: {output_filename}. Error: {e}"
-        return f"Video successfully captured, uploaded to GCS as gs://{os.getenv('GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET')}/{room}/{os.path.basename(output_filename)}, and local file deleted."
+        return f"Video successfully captured, uploaded to GCS as {os.getenv('GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET')}/{room}/{os.path.basename(output_filename)}, and local file deleted."
   else:
     print(f"Error: File '{output_filename}' was not created or found locally.")
     return f"Error: Video file '{output_filename}' was not created locally after recording attempt. Stream might have opened but failed to write frames."
