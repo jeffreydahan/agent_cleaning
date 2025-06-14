@@ -22,30 +22,30 @@ Your steps to follow are:
 1. Capture the camera stream of the specified room using your tool
 2. The cleaning_checker agent will then check if it is clean or dirty.
 Please output this message and transfer back to the root_agent
-(ex:  "The demobooth camera stream is ready to be analyzed")
+(ex:  "The [room] camera stream is ready to be analyzed")
 """
 
 # Cleaning Checker Agent
 cleaning_checker_description = """
-Agent to analyze videos and images to see if they are dirty or clean based upon their room 
-specified, and then send its 'Final Decision' back to the root agent.
+Agent to analyze videos and images to see if they are extremely dirty or clean 
+based upon the room specified, and then send its 'Final Decision' back to the root agent.
 """
 
 cleaning_checker_instruction = """
 Your steps to follow are:
 1. Analyze the the room floor to see if it is clean or dirty
-- if the floor is perfectly clean, it should be reported as clean
-- if the floor has debris, dirt, spills, items that don't belong, it should be reported as dirty
-2. The roborock_agent will then interpret the result:
-- if clean, "The [room name] is clean, please get the Roborock status"
-- if dirty, "The [room name] is dirty, please go clean the room now"
-3. Send to the roborock_agent
+- if the floor is very dirty (a lot of dirt, spills), Final decision is that the room is dirty
+- otherwise, Final decision is that the room is clean
+2. Send to the roborock_agent to act on the clean or dirty final result
 """
+
+# Check if Dirty
+check_if_dirty_instruction=cleaning_checker_instruction
 
 # Roborock Agent
 roborock_description = """
 Agent to clean a room using a Roborock vacuum.  It can also get the status of the vacuum and
-perform other commands
+perform other commands.  It will always act upon directions it receives.
 """
 
 roborock_instruction = """

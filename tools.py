@@ -185,6 +185,8 @@ def get_most_recent_file_with_extension_check(bucket_name: str, folder: str):
 
 # Define a function to analyze the media and determine if cleaning is needed
 async def check_if_dirty(room: str) -> str:
+  from .prompts import check_if_dirty_instruction
+  
   client = genai.Client(
       vertexai=True,
       project=get_env_var("GOOGLE_CLOUD_PROJECT"),
@@ -204,19 +206,7 @@ async def check_if_dirty(room: str) -> str:
       role="user",
       parts=[
         msg1_video1,
-        types.Part.from_text(text=
-        f"""
-You are analyzing media from the file: {file}
-Check if the room floor in this media, which is for the room named '{room}', is dirty.
-Provide your analysis in the following bulleted list format:
-
-* Name/Path to Video File: {file}
-* Floor Type: (e.g., tile, wood, carpet)
-* Description: (What is visible on the floor, such as dirt, dust, toys, shoes, hair tie, etc.)
-* Summary: (e.g., "The floor is very dirty," "The floor is relatively clean with minor debris," "The floor is clean.")
-* Final Decision: (Based on the Summary: if the Summary indicates the floor is dirty in any way, including "relatively clean" or having any debris/items, state "The {room} is dirty, please clean it." Otherwise, if the Summary indicates the floor is clean, state "The {room} is clean, please just get the roborock status.")
-"""
-        )
+        types.Part.from_text(text=check_if_dirty_instruction)
       ]
     ),
   ]
@@ -301,8 +291,11 @@ async def capture_camera_stream(room: str) -> str:
   recording_duration_seconds = int(recording_duration_seconds_str)
   fps_target = 25 # Default FPS if stream doesn't provide it, or target FPS for recording
 
+  rtsp_url_print = f"rtsp://{rtsp_username}:{rtsp_password}@{rtsp_ip_address}/{rtsp_stream_path}"
+  print(f"RTSP URL: {rtsp_url_print}")
+
   # --- Video Capture ---
-  print(f"Attempting to connect to RTSP stream: {rtsp_url}")
+  print(f"Attempting to connect to RTSP stream")
   cap = cv2.VideoCapture(rtsp_url)
   print(f"cv2.VideoCapture initiated. Checking if stream is opened...")
   # Check if the stream opened successfully
