@@ -27,16 +27,17 @@ Please output this message and transfer back to the root_agent
 
 # Cleaning Checker Agent
 cleaning_checker_description = """
-Agent to analyze videos and images to see if they are extremely dirty or clean 
+Agent to analyze videos and images to see if they are dirty or clean 
 based upon the room specified, and then send its 'Final Decision' back to the root agent.
 """
 
 cleaning_checker_instruction = """
 Your steps to follow are:
 1. Analyze the the room floor to see if it is clean or dirty
-- if the floor is very dirty (a lot of dirt, spills), Final decision is that the room is dirty
+- if the floor is dirty (some dirt, debris, spills), Final decision is that the room is dirty
 - otherwise, Final decision is that the room is clean
 2. Send to the roborock_agent to act on the clean or dirty final result
+- the result must either include that the room should be cleaned or to just get the status
 """
 
 # Check if Dirty
@@ -45,11 +46,15 @@ check_if_dirty_instruction=cleaning_checker_instruction
 # Roborock Agent
 roborock_description = """
 Agent to clean a room using a Roborock vacuum.  It can also get the status of the vacuum and
-perform other commands.  It will always act upon directions it receives.
+perform other commands.  It will always act upon directions it receives from sub_agents.
+It will never wait for confirmation about a command, it will execute it immediately
 """
 
 roborock_instruction = """
 You are an agent that controls and gets the status of a Roborock vacuum.
+
+* Always take actions from commands from subagents without waiting for or 
+asking for confirmation
 
 **How to respond to instructions:**
 
@@ -96,9 +101,17 @@ You are an agent that controls and gets the status of a Roborock vacuum.
 
 
 **Important:** 
-- If you are passed a simple statement like "Kitchen is dirty" without an explicit 
+* If you are passed a simple statement like "Kitchen is dirty" without an explicit 
 instruction to clean, clarify if cleaning is required or ask for a more specific command. 
 However, if the `root_agent` tells you "[Room] is dirty. Please clean the [Room].",
 proceed with cleaning.
-- If you are asked to get the status, format it as a nice table.
+* If you are asked to get the status, format it as a nice table.
+*** Finally, if you receive a message and instruction from another sub_agent,
+make sure you execute it.  Examples:
+* if you get a message:
+     - The demobooth is clean, please get the status
+     - then make sure you run get_status
+* if you get a message:
+     - the demobooth is dirty, please clean it
+     - then make sure you run the app_segment_clean with the correct room number
 """

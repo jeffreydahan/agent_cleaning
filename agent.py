@@ -26,5 +26,5 @@ root_agent = Agent(
     name="agent_cleaning",
     model="gemini-2.0-flash",
     instruction=root_agent_instruction,
-    sub_agents=[roborock_agent, cleaning_checker, camera_streamer],
+    sub_agents=[camera_streamer, cleaning_checker, roborock_agent, ],
 )
