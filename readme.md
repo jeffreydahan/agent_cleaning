@@ -1,10 +1,12 @@
 # Background
-This is a Google Agent Development Kit (ADK) Multi-Agent system which can check if a location is clean or dirty and then send a Roborock vacuum to clean the location. The following is the high level architecture and flow:
-![image](https://github.com/user-attachments/assets/e0ce943d-aec5-4b78-9106-a595fc78a0d2)
+This is a Google Agent Development Kit (ADK) Multi-Agent system which can check if a location is clean or dirty using an IP Camera, and then send a Roborock vacuum to clean the location. The following is the high level architecture and flow:
+![image](https://github.com/user-attachments/assets/3fb51c71-2d2c-4257-bbc4-aa1f8ab6556b)
 
-The following flow outlines how this Multi-Agent system operates
+
+The following flow outlines how this Multi-Agent system operates:
 - Cleaning Agent:  This agent handles the user request and agent/sub-agent responses.  It routes the agentic requests between the sub-agents as needed.
-- Cleaning Checker:  This sub-agent determines if a room's floor is clean or dirty.  As of now, there are static movies/images that can be reviewed inside of a Google Cloud Storage bucket.  This could be replaced with IP Cameras or even droneds.  The folder structure needs to have a subfolder for each room.  For example, if you have a home with a kitchen and hallway that you want to check, build the following in Google Cloud Storage.
+- Camera Agent:  This sub-agent handles the capture of an IP Camera video stream and copies it to a Google Cloud Storage Bucket.
+- Cleaning Checker:  This sub-agent determines if a room's floor is clean or dirty based upon the video/image stored from the Camera sub-agent.  The folder structure needs to have a subfolder for each room.  For example, if you have a home with a kitchen and hallway that you want to check, build the following in Google Cloud Storage.
 ```
 GCS Bucket
 |--hallway
@@ -65,7 +67,7 @@ pip freeze > requirements.txt
 in the same directory as your 'agent.py'.  This will ensure you have the latest
 requirements set for later deployment below.
 
-Then create a .env file at the root of the directory with the following information (you can rename the 'rename.evn' file to serve as the basis for the '.env' file):
+Then create a .env file at the root of the directory with the following information (you can rename the 'rename.env' file to serve as the basis for the '.env' file):
 
 # Running locally
 From the directory above agent_cleaning,
