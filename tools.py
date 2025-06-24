@@ -2,6 +2,8 @@ import os  # Import the os module for environment variables
 from dotenv import load_dotenv
 import time
 from datetime import datetime
+import subprocess
+import datetime
 
 # Import GenAI libraries
 from google import genai
@@ -15,7 +17,7 @@ from roborock.version_1_apis import RoborockMqttClientV1, RoborockLocalClientV1
 from roborock.web_api import RoborockApiClient
 
 # Import Video/Camera libraries
-import cv2
+# import cv2
 
 
 load_dotenv()  # Load environment variables from .env file
@@ -289,89 +291,52 @@ async def capture_camera_stream(room: str) -> str:
 
   rtsp_url = f"rtsp://{rtsp_username}:{rtsp_password}@{rtsp_ip_address}/{rtsp_stream_path}"
   recording_duration_seconds = int(recording_duration_seconds_str)
-  fps_target = 25 # Default FPS if stream doesn't provide it, or target FPS for recording
+  # fps_target = 25 # Default FPS if stream doesn't provide it, or target FPS for recording
 
-  rtsp_url_print = f"rtsp://{rtsp_username}:{rtsp_password}@{rtsp_ip_address}/{rtsp_stream_path}"
+  rtsp_url_print = f"rtsp://{rtsp_username}:xxxxxxx@{rtsp_ip_address}/{rtsp_stream_path}"
   print(f"RTSP URL: {rtsp_url_print}")
+
+  output_folder = "."
+  timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+  output_filename = f"capture_{timestamp}.mp4"
+  output_path = os.path.join(output_folder, output_filename)
 
   # --- Video Capture ---
   print(f"Attempting to connect to RTSP stream")
-  cap = cv2.VideoCapture(rtsp_url)
-  print(f"cv2.VideoCapture initiated. Checking if stream is opened...")
-  # Check if the stream opened successfully
-  if not cap.isOpened():
-      print(f"Error: Could not open video stream from {rtsp_url}")
-      return f"Error: Could not open video stream from {rtsp_url}. Please check the URL, credentials, camera status, and network connectivity."
+  ffmpeg_command = [
+    "ffmpeg",
+    "-rtsp_transport", "tcp",
+    "-i", rtsp_url,
+    "-t", str(recording_duration_seconds),
+    "-c:v", "copy",
+    "-c:a", "aac", # Re-encode audio to AAC
+    "-b:a", "128k", # Set audio bitrate
+    "-strict", "experimental", # May be needed for some AAC encoders
+     output_path,
+  ]
 
-  print(f"Successfully connected to the RTSP stream: {rtsp_url}")
-
-  # Get video properties from the stream
-  frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-  frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-  stream_fps = cap.get(cv2.CAP_PROP_FPS)
-  if stream_fps > 0:
-      fps_record = stream_fps
-      print(f"Detected stream FPS: {stream_fps:.2f}")
-  else:
-      fps_record = fps_target
-      print(f"Could not detect stream FPS. Using target FPS for recording: {fps_record}")
-
-  print(f"Stream properties: Resolution: {frame_width}x{frame_height}, Recording FPS: {fps_record}")
-
-  # Generate a unique filename with a timestamp
-  timestamp = datetime.now().strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] # Milliseconds
-  video_subfolder = "videos"
-  if not os.path.exists(video_subfolder):
-    os.makedirs(video_subfolder)
-
-  output_filename = f"{video_subfolder}/{room}_camera_stream_{timestamp}.avi"
-
-  print(f"Generated output filename: {output_filename}")
-
-  fourcc = cv2.VideoWriter_fourcc(*'XVID')
-  out = cv2.VideoWriter(output_filename, fourcc, fps_record, (frame_width, frame_height))
-  print(f"cv2.VideoWriter initiated. Checking if writer is opened...")
-
-  if not out.isOpened():
-    print(f"Error: Could not create video writer for {output_filename}")
-    print("This might be due to an unsupported codec or missing dependencies.")
-    cap.release()
-    return (f"Error: Could not create video writer for {output_filename}. "
-      "This might be due to an unsupported codec or missing dependencies. "
-      "On some systems, you might need to install 'ffmpeg' or 'libx264-dev'."
-      "Try a different 'fourcc' code (e.g., 'mp4v', 'H264', 'XVID').")
-
-
-  print(f"Saving video to: {output_filename}")
-  print(f"Recording for {recording_duration_seconds} seconds...")
-
-  # --- Recording Loop ---
-  start_time = time.time()
-  frame_count = 0
-
-  print("Starting recording loop...")
-  while True:
-    ret, frame = cap.read()
-
-    if not ret:
-        print("Error: Could not read frame from stream or stream ended.")
-        # Consider if this is an error or just end of a short stream
-        break
-
-    out.write(frame)
-    frame_count += 1
-
-    elapsed_time = time.time() - start_time
-    if elapsed_time >= recording_duration_seconds:
-        print(f"Recorded {recording_duration_seconds} seconds.")
-        break
-
-  print(f"Total frames recorded: {frame_count}")
-
-  # --- Cleanup ---
-  cap.release()
-  out.release()
-  cv2.destroyAllWindows()
+  # Execute the ffmpeg command using subprocess.
+  print(f"Starting capture of {rtsp_url_print} for {recording_duration_seconds} seconds...")
+  print(f"Output file: {output_path}")
+  
+  try:
+    # We use subprocess.run to execute the command.
+    # `check=True` will raise an exception if ffmpeg exits with an error.
+    # A timeout is added to prevent the script from hanging indefinitely.
+    result = subprocess.run(
+        ffmpeg_command, check=True, capture_output=True, text=True, timeout=recording_duration_seconds + 15
+    )
+    print("\nCapture successful!")
+    print("ffmpeg output (from stderr):\n" + result.stderr)
+  except FileNotFoundError:
+    print("\nError: 'ffmpeg' command not found. Please ensure ffmpeg is installed and in your system's PATH.")
+  except subprocess.CalledProcessError as e:
+    print(f"\nError during capture. ffmpeg exited with return code: {e.returncode}")
+    print("\nffmpeg stderr:\n" + e.stderr)
+  except subprocess.TimeoutExpired as e:
+    print("\nError: ffmpeg command timed out. This could be due to a network issue or a problem with the camera stream.")
+    if e.stderr:
+        print("\nffmpeg stderr:\n" + e.stderr)
 
   print(f"Video capture process finished. Local file should be: {output_filename}")
 

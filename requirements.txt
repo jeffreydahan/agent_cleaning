@@ -25,7 +25,7 @@ dotenv==0.9.9
 executing==2.2.0
 fastapi==0.115.12
 frozenlist==1.6.0
-google-adk==1.2.1
+google-adk==1.4.2
 google-ai-generativelanguage==0.6.15
 google-api-core==2.25.0rc0
 google-api-python-client==2.169.0
@@ -106,7 +106,7 @@ python-roborock==2.18.2
 python-vlc==3.0.21203
 PyYAML==6.0.2
 pyzmq==26.4.0
-requests==2.32.3
+requests==2.32.4
 rsa==4.9.1
 shapely==2.1.0
 six==1.17.0
