@@ -1,7 +1,7 @@
 from google.adk.agents import Agent
 
 # Import Tools
-from ...tools import capture_camera_stream, copy_to_google_cloud_storage
+from ...tools import capture_camera_stream
 
 # Import prompts
 from ...prompts import ip_camera_description, ip_camera_instruction
@@ -14,6 +14,5 @@ camera_streamer = Agent(
     instruction=ip_camera_instruction,
     tools=[
        capture_camera_stream,
-       copy_to_google_cloud_storage,
     ],
 )

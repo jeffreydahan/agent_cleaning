@@ -1,12 +1,81 @@
-# Deploy to Cloud cloud
-cd ~/code/adk
-adk deploy cloud_run --project=$GOOGLE_CLOUD_PROJECT --region=$GOOGLE_CLOUD_LOCATION --service_name=$CLOUD_RUN_SERVICE_NAME --app_name=$CLOUD_RUN_APP_NAME --with_ui $AGENT_LOCAL_APP_DIR
+# This script deploys the camera tool to Cloud Run using Secret Manager
+# and then deploys the main agent to Agent Engine.
+
+# --- Preamble: Enable APIs and Load Environment ---
+gcloud services enable run.googleapis.com
+gcloud services enable storage.googleapis.com
+gcloud services enable artifactregistry.googleapis.com
+gcloud services enable secretmanager.googleapis.com
+
+# Load environment variables from .env file in the project root
+cd ~/code/adk/agent_cleaning
+source .env
+
+# --- Secret Manager Setup ---
+# This section creates secrets in Google Secret Manager and grants the
+# Cloud Run service account access. It's safe to re-run this script.
+PROJECT_NUMBER=$(gcloud projects describe "$GOOGLE_CLOUD_PROJECT" --format='value(projectNumber)')
+SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+# Helper function to create/update secrets and grant permissions
+create_or_update_secret() {
+  local secret_name=$1
+  local secret_value=$2
+  echo "--- Setting up secret: $secret_name ---"
+  gcloud secrets create "$secret_name" --replication-policy="automatic" --project="$GOOGLE_CLOUD_PROJECT" &>/dev/null || echo "Secret '$secret_name' already exists. Updating version."
+  echo -n "$secret_value" | gcloud secrets versions add "$secret_name" --data-file=- --project="$GOOGLE_CLOUD_PROJECT"
+  gcloud secrets add-iam-policy-binding "$secret_name" \
+    --member="serviceAccount:$SERVICE_ACCOUNT" \
+    --role="roles/secretmanager.secretAccessor" \
+    --project="$GOOGLE_CLOUD_PROJECT" --condition=None &>/dev/null || echo "IAM binding for '$secret_name' already exists."
+}
+
+# Create/update all necessary secrets
+create_or_update_secret "rtsp-username" "$RTSP_USERNAME"
+create_or_update_secret "rtsp-password" "$RTSP_PASSWORD"
+create_or_update_secret "rtsp-ip-address" "$RTSP_IP_ADDRESS"
+create_or_update_secret "rtsp-stream-path" "$RTSP_STREAM_PATH"
+create_or_update_secret "record-duration-seconds" "$RECORD_DURATION_SECONDS"
+create_or_update_secret "gcs-cleaning-bucket" "$GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET"
+echo "--- Secret setup complete ---"
+
+# --- Build and Deploy Camera Tool Container ---
+gcloud artifacts repositories create "$GOOGLE_CLOUD_ARTIFACT_REPO" --repository-format=docker --location="$GOOGLE_CLOUD_LOCATION" --description="Docker repository" &>/dev/null || echo "Artifact Registry repo '$GOOGLE_CLOUD_ARTIFACT_REPO' already exists."
+
+cd ~/code/adk/agent_cleaning/camera_tool_container
+gcloud builds submit --tag "$GOOGLE_CLOUD_LOCATION-docker.pkg.dev/$GOOGLE_CLOUD_PROJECT/$GOOGLE_CLOUD_ARTIFACT_REPO/camera-tool-image:latest" .
+
+echo "--- Deploying to Cloud Run with secrets ---"
+gcloud run deploy camera-tool-svc \
+  --image "$GOOGLE_CLOUD_LOCATION-docker.pkg.dev/$GOOGLE_CLOUD_PROJECT/$GOOGLE_CLOUD_ARTIFACT_REPO/camera-tool-image:latest" \
+  --platform managed \
+  --region "$GOOGLE_CLOUD_LOCATION" \
+  --no-allow-unauthenticated \
+  --set-secrets="RTSP_USERNAME=rtsp-username:latest" \
+  --set-secrets="RTSP_PASSWORD=rtsp-password:latest" \
+  --set-secrets="RTSP_IP_ADDRESS=rtsp-ip-address:latest" \
+  --set-secrets="RTSP_STREAM_PATH=rtsp-stream-path:latest" \
+  --set-secrets="RECORD_DURATION_SECONDS=record-duration-seconds:latest" \
+  --set-secrets="GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET=gcs-cleaning-bucket:latest"
+
+# Get the URL of the deployed service and export it for the next step
+export CAMERA_TOOL_SERVICE_URL=$(gcloud run services describe camera-tool-svc --platform managed --region "$GOOGLE_CLOUD_LOCATION" --format 'value(status.url)')
+echo "Camera Tool Service URL: $CAMERA_TOOL_SERVICE_URL"
+
+# --- Test the Deployed Cloud Run Service ---
+echo "--- Testing camera-tool-svc with room=demobooth ---"
+curl -m 70 -X POST "$CAMERA_TOOL_SERVICE_URL" \
+  -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+  -H "Content-Type: application/json" \
+  -d '{"room": "demobooth"}'
+echo "\n--- Test complete ---"
 
 # Deploy to Agent Engine
-~/code/adk$ python3 -m agent_cleaning.deploy_to_agent_engine
+cd ~/code/adk
+python3 -m agent_cleaning.deploy_to_agent_engine
 
 # Query from Agent Engine
-~/code/adk$ python3 agent_cleaning/query_agent_engine.py 
+python3 agent_cleaning/query_agent_engine.py 
 
 # Deploy to Agentspace
-~/code/adk$ agent_cleaning/deploy_to_agentspace.sh
+agent_cleaning/deploy_to_agentspace.sh

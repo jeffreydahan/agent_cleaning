@@ -67,6 +67,6 @@ session_object
 for event in remote_app.stream_query(
     user_id="u_456",
     session_id=remote_session["id"],
-    message="check the hallway",
+    message="check the demobooth",
 ):
     print(event)

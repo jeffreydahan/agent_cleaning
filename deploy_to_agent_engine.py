@@ -27,6 +27,7 @@ agent_name=get_env_var("AGENT_NAME")
 roborock_username=get_env_var("ROBOROCK_USERNAME")
 roborock_password=get_env_var("ROBOROCK_PASSWORD")
 cleaning_bucket=get_env_var("GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET")
+camera_tool_service_url = get_env_var("CAMERA_TOOL_SERVICE_URL")
 
 
 # initialitze vertexai
@@ -54,9 +55,13 @@ with open(requirements_path, "r") as f:
 # Specific environment variables that you want to pass
 # to be included with Agent Engine Deployment
 env_vars = {
+    "GOOGLE_CLOUD_STORAGE_STAGING_BUCKET": staging_bucket,
     "ROBOROCK_USERNAME": roborock_username,
     "ROBOROCK_PASSWORD": roborock_password,
     "GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET": cleaning_bucket,
+    "CAMERA_TOOL_SERVICE_URL": camera_tool_service_url,
+    "AGENT_DESCRIPTION": agent_description,
+    "AGENT_NAME": agent_name,
 }
 
 # Upload the ADK Agent to Agent Engine
@@ -65,7 +70,11 @@ remote_app = agent_engines.create(
     requirements=requirements_list,
     display_name=agent_name,
     description=agent_description,
-    extra_packages=["agent_cleaning/agent.py", "agent_cleaning/tools.py"],
+    extra_packages=[
+        "agent_cleaning/agent.py", 
+        "agent_cleaning/tools.py", 
+        "agent_cleaning/prompts.py"
+    ],
     env_vars=env_vars
 )
 
