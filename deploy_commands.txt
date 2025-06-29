@@ -78,4 +78,8 @@ python3 -m agent_cleaning.deploy_to_agent_engine
 python3 agent_cleaning/query_agent_engine.py 
 
 # Deploy to Agentspace
+# if session restarts:
+source ~/code/adk/agent_cleaning/.venv/bin/activate
+source ~/code/adk/agent_cleaning/.env
+cd ~/code/adk
 agent_cleaning/deploy_to_agentspace.sh
