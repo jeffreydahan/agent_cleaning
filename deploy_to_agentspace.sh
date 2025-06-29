@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -x
+
+source agent_cleaning/.env
+
 # Source environment variables from .env file
 # The previous method `export $(grep -v '^#' .env | xargs)` can be fragile.
 # Using `set -a` and `source` is generally more robust.
@@ -21,6 +25,20 @@ ASSISTANT_ID="default_assistant"
 REASONING_ENGINE_ID="${AGENT_ENGINE_APP_RESOURCE_ID}"
 AGENT_NAME="${AGENT_NAME}"
 AGENT_DESCRIPTION="${AGENT_DESCRIPTION}"
+TOOL_DESCRIPTION="${TOOL_DESCRIPTION}"
+
+# Print the above variables returned from .env file
+echo "PROJECT_ID: ${PROJECT_ID}"
+echo "COLLECTION_ID: ${COLLECTION_ID}"
+echo "ENGINE_ID: ${ENGINE_ID}"
+echo "ASSISTANT_ID: ${ASSISTANT_ID}"
+echo "REASONING_ENGINE_ID: ${REASONING_ENGINE_ID}"
+echo "AGENT_NAME: ${AGENT_NAME}"
+echo "AGENT_DESCRIPTION: ${AGENT_DESCRIPTION}"
+echo "TOOL_DESCRIPTION: ${TOOL_DESCRIPTION}"
+
+# Validate required variables
+
 
 
 

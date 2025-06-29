@@ -47,7 +47,11 @@ app = reasoning_engines.AdkApp(
 
 # Importing all requirements previously set with 
 # pip freeze > requirements.txt
-requirements_path = "requirements.txt"
+# print current directory
+import os
+print(os.getcwd())
+
+requirements_path = "agent_cleaning/requirements.txt"
 with open(requirements_path, "r") as f:
     requirements_list = [line.strip() for line in f if line.strip() and not line.startswith("#")]
 
