@@ -1,3 +1,6 @@
+gcloud auth login
+gcloud auth application-default login
+
 # This script deploys the camera tool to Cloud Run using Secret Manager
 # and then deploys the main agent to Agent Engine.
 
