@@ -35,7 +35,7 @@ ENGINE_ID="${AGENTSPACE_ENGINE_ID}"
 ASSISTANT_ID="${ASSISTANT_ID:-default_assistant}"   # Default if not in .env
 
 ### Change this variable as needed if you want to delete other agents as well
-AGENT_NAME_TO_DELETE="${AGENT_NAME}"               # Agent's displayName to delete
+AGENT_NAME_TO_DELETE="CameraCleaningAgent"               # Agent's displayName to delete
 
 # Validate required variables that don't have defaults
 if [ -z "${PROJECT_ID}" ]; then

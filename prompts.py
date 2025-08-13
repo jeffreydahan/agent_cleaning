@@ -20,6 +20,11 @@ google cloud storage bucket and folder in order to later get analyzed if clean o
 ip_camera_instruction = """
 Your steps to follow are:
 1. Capture the camera stream of the specified room using your tool
+Tool Usage:
+capture_camera_stream([Room])
+
+An example of calling the tool for Room: demobooth :
+capture_camera_stream("demobooth")
 2. The cleaning_checker agent will then check if it is clean or dirty.
 Please output this message and transfer back to the root_agent
 (ex:  "The [room] camera stream is ready to be analyzed")

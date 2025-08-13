@@ -11,7 +11,7 @@ gcloud services enable artifactregistry.googleapis.com
 gcloud services enable secretmanager.googleapis.com
 
 # Load environment variables from .env file in the project root
-cd ~/code/adk/agent_cleaning
+cd ~/code/agent_cleaning
 source .env
 
 # --- Secret Manager Setup ---
@@ -45,7 +45,7 @@ echo "--- Secret setup complete ---"
 # --- Build and Deploy Camera Tool Container ---
 gcloud artifacts repositories create "$GOOGLE_CLOUD_ARTIFACT_REPO" --repository-format=docker --location="$GOOGLE_CLOUD_LOCATION" --description="Docker repository" &>/dev/null || echo "Artifact Registry repo '$GOOGLE_CLOUD_ARTIFACT_REPO' already exists."
 
-cd ~/code/adk/agent_cleaning/camera_tool_container
+cd ~/code/agent_cleaning/camera_tool_container
 gcloud builds submit --tag "$GOOGLE_CLOUD_LOCATION-docker.pkg.dev/$GOOGLE_CLOUD_PROJECT/$GOOGLE_CLOUD_ARTIFACT_REPO/camera-tool-image:latest" .
 
 echo "--- Deploying to Cloud Run with secrets ---"
@@ -74,15 +74,23 @@ curl -m 70 -X POST "$CAMERA_TOOL_SERVICE_URL" \
 echo "\n--- Test complete ---"
 
 # Deploy to Agent Engine
-cd ~/code/adk
+cd ~code
 python3 -m agent_cleaning.deploy_to_agent_engine
 
 # Query from Agent Engine
 python3 agent_cleaning/query_agent_engine.py 
 
 # Deploy to Agentspace
+cd ~/code/agent_cleaning
+bash deploy_to_agentspace.sh
+
+# Remove from Agentspace (based on Agent Name in env file; if updated, run the
+# source command)
+cd ~/code/agent_cleaning
+bash remove_from_agentspace.sh
+
+
 # if session restarts:
-source ~/code/adk/agent_cleaning/.venv/bin/activate
-source ~/code/adk/agent_cleaning/.env
-cd ~/code/adk
-agent_cleaning/deploy_to_agentspace.sh
+source ~/code/agent_cleaning/.venv/bin/activate
+source ~/code/agent_cleaning/.env
+

@@ -45,6 +45,11 @@ async def ensure_login():
     global device
     if mqtt_client is None:
         try:
+            logging.info("Attempting Roborock login...")
+            logging.info("Username: " + get_env_var('ROBOROCK_USERNAME'))
+          
+            
+            
             web_api = RoborockApiClient(username=get_env_var('ROBOROCK_USERNAME'))
             user_data = await web_api.pass_login(password=get_env_var('ROBOROCK_PASSWORD'))
             home_data = await web_api.get_home_data_v2(user_data)
@@ -103,11 +108,11 @@ async def get_status():
         return {"error": f"Error getting status: {e}. Connection reset."}
 
 # Send basic Roborock commands that don't have parameters
-async def send_basic_command(command: str) -> str:
+async def send_basic_command(command: str) -> dict:
     if not await ensure_login():
         return {"error": "Not logged in to Roborock."}
     try:
-        await mqtt_client.send_command(command) # type: ignore
+        await mqtt_client.send_command(command)  # type: ignore
         logging.info(f"Command sent: {command}")
         return {"result": f"Command {command} sent successfully."}
     except Exception as e:
@@ -115,17 +120,17 @@ async def send_basic_command(command: str) -> str:
         await reset_connection()
         return {"error": f"Error sending {command}: {e}. Connection reset."}
 
-# cleans a specific room also known as segment. To Do is to make this dynamic based upon desired segment from instructions mapping in the Agent definition below. 
-async def app_segment_clean(segment_number: dict) -> str:
+# cleans a specific room also known as segment. To Do is to make this dynamic based upon desired segment from instructions mapping in the Agent definition below.
+async def app_segment_clean(segment_ids: list[int]) -> dict:
     if not await ensure_login():
         return {"error": "Not logged in to Roborock."}
     command = "app_segment_clean"
-    try: # type: ignore
-        segment = await mqtt_client.send_command(command, [{"segments": segment_number, "repeat": 1}]) # type: ignore
+    try:
+        segment = await mqtt_client.send_command(command, [{"segments": segment_ids, "repeat": 1}])  # type: ignore
         logging.info(f"Command sent: {command}")
         return segment
     except Exception as e:
-        print(f"Error sending {command}: {e}")
+        logging.error(f"Error sending {command}: {e}")
         await reset_connection()
         return {"error": f"Error sending {command}: {e}. Connection reset."}
 
@@ -250,12 +255,12 @@ async def check_if_dirty(room: str) -> str:
 
 # Function to handle capturing a camera stream from a remote camera
 # This function acts as a client, calling the dedicated Cloud Run service.
-async def capture_camera_stream(room: str) -> str:
+async def capture_camera_stream(room: str) -> dict:
     """Makes an authenticated request to the camera tool service on Cloud Run."""
     logging.info(f"Calling camera tool service for room: {room}")
     service_url = get_env_var("CAMERA_TOOL_SERVICE_URL")
     if not service_url:
-        return "Error: The CAMERA_TOOL_SERVICE_URL environment variable is not set for the agent. Cannot call the camera service."
+        return {"error": "The CAMERA_TOOL_SERVICE_URL environment variable is not set for the agent. Cannot call the camera service."}
 
     try:
         # Get default credentials from the environment (this works in Cloud Run,
@@ -269,6 +274,7 @@ async def capture_camera_stream(room: str) -> str:
         # Get an ID token for the Cloud Run service URL (the audience).
         # This token will be used to authenticate the request.
         auth_token = id_token.fetch_id_token(auth_req, service_url)
+        logging.info(f"auth_token: {auth_token}")
 
         headers = {
             "Authorization": f"Bearer {auth_token}",
@@ -278,7 +284,7 @@ async def capture_camera_stream(room: str) -> str:
         # The camera service can take a while to record, so we set a long timeout.
         # The service itself has a timeout of 0 (unlimited) in the Dockerfile CMD.
         async with httpx.AsyncClient(timeout=300.0) as client:
-            response = await client.post(service_url, headers=headers, json={"room": room})
+            response = await client.post(service_url, headers=headers, json={"room": room, "rtsp_ip_address": rtsp_ip_address})
             response.raise_for_status()  # Raise an exception for 4xx/5xx status codes
             result = response.json()
             logging.info(f"Received response from camera service: {result.get('message')}")

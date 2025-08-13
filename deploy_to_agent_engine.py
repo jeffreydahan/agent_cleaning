@@ -30,6 +30,7 @@ cleaning_bucket=get_env_var("GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET")
 camera_tool_service_url = get_env_var("CAMERA_TOOL_SERVICE_URL")
 
 
+
 # initialitze vertexai
 vertexai.init(
     project=project_id,

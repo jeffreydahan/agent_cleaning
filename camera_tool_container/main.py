@@ -44,7 +44,7 @@ def copy_to_google_cloud_storage(source_file_name: str, room: str) -> bool:
     return False
 
 # Function to handle capturing a camera stream from a remote camera
-def capture_camera_stream(room: str) -> str:
+def capture_camera_stream(room: str,) -> str:
   # --- Configuration ---
   logging.info("Attempting to capture camera stream...")
   # Retrieve RTSP credentials and path from environment variables
@@ -152,11 +152,12 @@ def handle_trigger():
         return jsonify({"status": "error", "message": "Bad Request: Missing or invalid JSON body."}), 400
 
     room = data.get('room')
+
     if not room:
         logging.error("'room' not specified in request payload.")
         return jsonify({"status": "error", "message": "Bad Request: 'room' must be specified in the JSON payload."}), 400
-
     logging.info(f"Received trigger for room: {room}")
+    
     result_message = capture_camera_stream(room)
     
     if "Error" in result_message:
