@@ -33,11 +33,9 @@ location=get_env_var("GOOGLE_CLOUD_LOCATION")
 
 
 
-from dotenv import set_key, find_dotenv
-# Find the .env file (usually in the current directory or project root)
-dotenv_path = find_dotenv(usecwd=True)
+dotenv_path = "agent_cleaning/.env"  # Relative to project root
 if not dotenv_path: # If .env is not found, default to creating one in the current directory
-    dotenv_path = ".env"
+    print(f"dotenv_path does not exist: {dotenv_path}")
 load_dotenv(dotenv_path=dotenv_path, override=True) # Force reload from the .env file
 agent_engine_id = os.getenv("AGENT_ENGINE_APP_RESOURCE_ID")
 

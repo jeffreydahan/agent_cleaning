@@ -284,7 +284,7 @@ async def capture_camera_stream(room: str) -> dict:
         # The camera service can take a while to record, so we set a long timeout.
         # The service itself has a timeout of 0 (unlimited) in the Dockerfile CMD.
         async with httpx.AsyncClient(timeout=300.0) as client:
-            response = await client.post(service_url, headers=headers, json={"room": room, "rtsp_ip_address": rtsp_ip_address})
+            response = await client.post(service_url, headers=headers, json={"room": room})
             response.raise_for_status()  # Raise an exception for 4xx/5xx status codes
             result = response.json()
             logging.info(f"Received response from camera service: {result.get('message')}")

@@ -4,13 +4,12 @@ set -x
 
 source agent_cleaning/.env
 
+source agent_cleaning/.env
+
 # Source environment variables from .env file
-# The previous method `export $(grep -v '^#' .env | xargs)` can be fragile.
-# Using `set -a` and `source` is generally more robust.
 if [ -f .env ]; then
-    set -a # Automatically export all variables
     source .env
-    set +a # Stop automatically exporting
+    source .env
 fi
 
 # Get GCP Access Token

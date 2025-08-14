@@ -14,7 +14,7 @@ from .tools import get_env_var
 
 
 # Import packages to assist with writing/reading env variables
-from dotenv import set_key, find_dotenv, load_dotenv
+from dotenv import set_key, find_dotenv, load_dotenv, get_key
 import os
 load_dotenv()
 
@@ -85,27 +85,25 @@ remote_app = agent_engines.create(
 
 print(remote_app.resource_name)
 
-# Set the Agent Engine Agent ID to an env variable for use
-# in the next phase of deploying to Agentspace if desired
-
-# Find the .env file (usually in the current directory or project root)
-dotenv_path = find_dotenv(usecwd=True)
-if not dotenv_path: # If .env is not found, default to creating one in the current directory
-    dotenv_path = ".env"
+# Set the Agent Engine Agent ID to an env variable for use in the next phase of
+# deploying to Agentspace if desired. This script updates the .env file with
+# the new resource ID.
+dotenv_path = "agent_cleaning/.env"  # Relative to project root
 set_key(dotenv_path, "AGENT_ENGINE_APP_RESOURCE_ID", remote_app.resource_name)
 print(f"AGENT_ENGINE_APP_RESOURCE_ID='{remote_app.resource_name}' has been set in {dotenv_path}")
 
-# Verify the key can be loaded
-print(f"Verifying AGENT_ENGINE_APP_RESOURCE_ID from {dotenv_path}...")
-# Clear the variable from os.environ if it was set by a previous load_dotenv in this same script run
-if "AGENT_ENGINE_APP_RESOURCE_ID" in os.environ:
-    del os.environ["AGENT_ENGINE_APP_RESOURCE_ID"]
-load_dotenv(dotenv_path=dotenv_path, override=True) # Force reload from the .env file
-loaded_app_resource_id = os.getenv("AGENT_ENGINE_APP_RESOURCE_ID")
-if loaded_app_resource_id == remote_app.resource_name:
-    print(f"Successfully loaded AGENT_ENGINE_APP_RESOURCE_ID: {loaded_app_resource_id}")
+# Verify the key was written correctly to the .env file
+print(f"Verifying AGENT_ENGINE_APP_RESOURCE_ID in {dotenv_path}...")
+written_value = get_key(dotenv_path, "AGENT_ENGINE_APP_RESOURCE_ID")
+if written_value == remote_app.resource_name:
+    print(f"Successfully verified AGENT_ENGINE_APP_RESOURCE_ID: {written_value}")
+    # Update the current process's environment for consistency.
+    os.environ["AGENT_ENGINE_APP_RESOURCE_ID"] = remote_app.resource_name
 else:
-    print(f"Error: AGENT_ENGINE_APP_RESOURCE_ID could not be verified. Expected '{remote_app.resource_name}', got '{loaded_app_resource_id}'")
+    print(f"Error: AGENT_ENGINE_APP_RESOURCE_ID could not be verified in {dotenv_path}. Expected '{remote_app.resource_name}', got '{written_value}'")
+
+# now setting the env variable in the current environment for AGENT_ENGINE_APP_RESOURCE_ID
+os.environ["AGENT_ENGINE_APP_RESOURCE_ID"] = remote_app.resource_name
 
 # You can see this agent inside of Vertex AI Agent Engine.  You can delete it from
 # the Google Cloud Console if desired.  If you get an error, ensure you have

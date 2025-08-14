@@ -62,8 +62,16 @@ gcloud run deploy camera-tool-svc \
   --set-secrets="GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET=gcs-cleaning-bucket:latest"
 
 # Get the URL of the deployed service and export it for the next step
+cd ~code
 export CAMERA_TOOL_SERVICE_URL=$(gcloud run services describe camera-tool-svc --platform managed --region "$GOOGLE_CLOUD_LOCATION" --format 'value(status.url)')
 echo "Camera Tool Service URL: $CAMERA_TOOL_SERVICE_URL"
+
+# update the agent_cleaning/.env file with this value.  If the value is already present in the file, update it.
+if grep -q "^CAMERA_TOOL_SERVICE_URL=" agent_cleaning/.env; then
+  sed -i "s|^CAMERA_TOOL_SERVICE_URL=.*|CAMERA_TOOL_SERVICE_URL=\"$CAMERA_TOOL_SERVICE_URL\"|" agent_cleaning/.env
+else
+  echo "CAMERA_TOOL_SERVICE_URL=\"$CAMERA_TOOL_SERVICE_URL\"" >> agent_cleaning/.env
+fi
 
 # --- Test the Deployed Cloud Run Service ---
 echo "--- Testing camera-tool-svc with room=demobooth ---"
@@ -74,8 +82,10 @@ curl -m 70 -X POST "$CAMERA_TOOL_SERVICE_URL" \
 echo "\n--- Test complete ---"
 
 # Deploy to Agent Engine
-cd ~code
+cd ~/code
 python3 -m agent_cleaning.deploy_to_agent_engine
+source agent_cleaning/.env
+echo $AGENT_ENGINE_APP_RESOURCE_ID
 
 # Query from Agent Engine
 python3 agent_cleaning/query_agent_engine.py 
