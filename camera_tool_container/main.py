@@ -4,6 +4,7 @@ import subprocess
 import logging
 from flask import Flask, request, jsonify
 from google.cloud import storage
+from google.cloud import secretmanager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -17,10 +18,35 @@ def get_env_var(var_name: str) -> str | None:
         logging.warning(f"Environment variable '{var_name}' is not set.")
     return value
 
+# Function to get secret from Google Cloud Secret Manager
+def get_secret_value(secret_id: str, version_id: str = "latest") -> str | None:
+    """
+    Retrieves a secret's value from Google Cloud Secret Manager.
+    Assumes the GOOGLE_CLOUD_PROJECT environment variable is set.
+    """
+    project_id = get_env_var("GOOGLE_CLOUD_PROJECT")
+    if not project_id:
+        logging.error("GOOGLE_CLOUD_PROJECT environment variable not set. Cannot fetch secrets.")
+        return None
+
+    try:
+        client = secretmanager.SecretManagerServiceClient()
+        name = f"projects/{project_id}/secrets/{secret_id}/versions/{version_id}"
+
+        logging.info(f"Accessing secret: {secret_id}")
+        response = client.access_secret_version(request={"name": name})
+
+        payload = response.payload.data.decode("UTF-8")
+        logging.info(f"Successfully accessed secret: {secret_id}")
+        return payload
+    except Exception as e:
+        logging.error(f"Error accessing secret '{secret_id}': {e}")
+        return None
+
 # Function to copy local file to folder in Google Cloud Storage
 def copy_to_google_cloud_storage(source_file_name: str, room: str) -> bool:
   # GCS Configuration
-  gcs_bucket_name = get_env_var("GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET")
+  gcs_bucket_name = get_secret_value("gcs-cleaning-bucket")
   if gcs_bucket_name and gcs_bucket_name.startswith("gs://"):
     gcs_bucket_name = gcs_bucket_name[5:] # Remove "gs://" prefix
     logging.info(f"Note: Stripped 'gs://' prefix. Using GCS bucket name: {gcs_bucket_name}")
@@ -47,13 +73,12 @@ def copy_to_google_cloud_storage(source_file_name: str, room: str) -> bool:
 def capture_camera_stream(room: str,) -> str:
   # --- Configuration ---
   logging.info("Attempting to capture camera stream...")
-  # Retrieve RTSP credentials and path from environment variables
-  rtsp_username = get_env_var("RTSP_USERNAME")
-  rtsp_password = get_env_var("RTSP_PASSWORD")
-  rtsp_ip_address = get_env_var("RTSP_IP_ADDRESS")
-  rtsp_stream_path = get_env_var("RTSP_STREAM_PATH")
-  recording_duration_seconds_str = get_env_var("RECORD_DURATION_SECONDS") # type: ignore
-
+  # Retrieve RTSP credentials and path from secrets manager
+  rtsp_username = get_secret_value("rtsp-username")
+  rtsp_password = get_secret_value("rtsp-password")
+  rtsp_ip_address = get_secret_value("rtsp-ip-address")
+  rtsp_stream_path = get_secret_value("rtsp-stream-path")
+  recording_duration_seconds_str = get_secret_value("recording-duration-seconds")
   logging.info(f"RTSP_USERNAME: {'Set' if rtsp_username else 'Not Set'}")
   # Avoid printing password directly, but check if it's set
   logging.info(f"RTSP_PASSWORD: {'Set' if rtsp_password else 'Not Set'}")
@@ -63,7 +88,7 @@ def capture_camera_stream(room: str,) -> str:
 
   # Basic validation for essential RTSP parameters
   if not all([rtsp_username, rtsp_password, rtsp_ip_address, rtsp_stream_path, recording_duration_seconds_str]):
-      return "Error: One or more essential RTSP configuration environment variables are missing."
+      return "Error: One or more essential RTSP configuration environment/secrets variables are missing."
 
   try:
       recording_duration_seconds = int(recording_duration_seconds_str)

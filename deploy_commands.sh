@@ -54,17 +54,14 @@ gcloud run deploy camera-tool-svc \
   --platform managed \
   --region "$GOOGLE_CLOUD_LOCATION" \
   --no-allow-unauthenticated \
-  --set-secrets="RTSP_USERNAME=rtsp-username:latest" \
-  --set-secrets="RTSP_PASSWORD=rtsp-password:latest" \
-  --set-secrets="RTSP_IP_ADDRESS=rtsp-ip-address:latest" \
-  --set-secrets="RTSP_STREAM_PATH=rtsp-stream-path:latest" \
-  --set-secrets="RECORD_DURATION_SECONDS=record-duration-seconds:latest" \
-  --set-secrets="GOOGLE_CLOUD_STORAGE_CLEANING_BUCKET=gcs-cleaning-bucket:latest"
-
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT" \
+  
+  
 # Get the URL of the deployed service and export it for the next step
-cd ~code
+cd ~/code
 export CAMERA_TOOL_SERVICE_URL=$(gcloud run services describe camera-tool-svc --platform managed --region "$GOOGLE_CLOUD_LOCATION" --format 'value(status.url)')
 echo "Camera Tool Service URL: $CAMERA_TOOL_SERVICE_URL"
+create_or_update_secret "camera-tool-service-url" "$CAMERA_TOOL_SERVICE_URL"
 
 # update the agent_cleaning/.env file with this value.  If the value is already present in the file, update it.
 if grep -q "^CAMERA_TOOL_SERVICE_URL=" agent_cleaning/.env; then
@@ -103,4 +100,3 @@ bash remove_from_agentspace.sh
 # if session restarts:
 source ~/code/agent_cleaning/.venv/bin/activate
 source ~/code/agent_cleaning/.env
-
