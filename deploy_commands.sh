@@ -100,3 +100,15 @@ bash remove_from_agentspace.sh
 # if session restarts:
 source ~/code/agent_cleaning/.venv/bin/activate
 source ~/code/agent_cleaning/.env
+
+# redeploy cloud run with new IP:
+RTSP_IP_ADDRESS="$(curl -s icanhazip.com)" #set the new IP address
+echo $RTSP_IP_ADDRESS
+sed -i.bak "s/^RTSP_IP_ADDRESS=.*/RTSP_IP_ADDRESS=\"${RTSP_IP_ADDRESS}\"/" .env # update env file
+create_or_update_secret "rtsp-ip-address" "$RTSP_IP_ADDRESS" # update the secret
+gcloud run deploy camera-tool-svc \
+  --image "$GOOGLE_CLOUD_LOCATION-docker.pkg.dev/$GOOGLE_CLOUD_PROJECT/$GOOGLE_CLOUD_ARTIFACT_REPO/camera-tool-image:latest" \
+  --platform managed \
+  --region "$GOOGLE_CLOUD_LOCATION" \
+  --no-allow-unauthenticated \
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT"
