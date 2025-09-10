@@ -112,3 +112,12 @@ gcloud run deploy camera-tool-svc \
   --region "$GOOGLE_CLOUD_LOCATION" \
   --no-allow-unauthenticated \
   --set-env-vars="GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT"
+
+# Test cloud run
+curl -X POST "https://camera-tool-svc-732115074534.us-central1.run.app" \
+-H "Authorization: bearer $(gcloud auth print-identity-token)" \
+-H "Content-Type: application/json" \
+-d '{
+  "room": "demobooth"
+}'
+
