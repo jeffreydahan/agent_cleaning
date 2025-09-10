@@ -80,8 +80,8 @@ echo "\n--- Test complete ---"
 
 # Deploy to Agent Engine
 cd ~/code
-python3 -m agent_cleaning.deploy_to_agent_engine
 source agent_cleaning/.env
+python3 -m agent_cleaning.deploy_to_agent_engine
 echo $AGENT_ENGINE_APP_RESOURCE_ID
 
 # Query from Agent Engine
