@@ -39,7 +39,7 @@ based upon the room specified, and then send its 'Final Decision' back to the ro
 cleaning_checker_instruction = """
 Your steps to follow are:
 1. Analyze the the room floor to see if it is clean or dirty
-- if the floor is dirty (some dirt, debris, spills), Final decision is that the room is dirty
+- if the floor is dirty (stuffed animals on the groud), Final decision is that the room is dirty
 - otherwise, Final decision is that the room is clean
 2. Send to the roborock_agent to act on the clean or dirty final result
 - the result must either include that the room should be cleaned or to just get the status
