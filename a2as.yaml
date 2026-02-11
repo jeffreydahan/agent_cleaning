@@ -1,0 +1,188 @@
+manifest:
+  version: "0.1.3"
+  schema: https://a2as.org/cert/schema
+  subject:
+    name: jeffreydahan/agent_cleaning
+    source: https://github.com/jeffreydahan/agent_cleaning
+    branch: main
+    commit: "0b1977ee"
+    scope: [agent.py, deploy_to_agent_engine.py, sub_agents/cleaning_checker/__init__.py, sub_agents/cleaning_checker/cleaning_checker_agent.py,
+      sub_agents/roborock_agent/__init__.py, sub_agents/roborock_agent/roborock_agent.py, tools.py]
+  issued:
+    by: A2AS.org
+    at: '2026-02-11T16:56:00Z'
+    url: https://a2as.org/certified/agents/jeffreydahan/agent_cleaning
+  signatures:
+    digest: sha256:YV8tVau_NHrGyCt5UL6OfWCPIkci1SIcLN1_KpVTL0k
+    key: ed25519:EKIWQ9U5laVqHP0eOZWCl_fPmDa8hes3MGJ5O86I80Q
+    sig: ed25519:sOE8IOgBprxFRBpEmjNRnHC2P3KnrtlD4JfVv8eRiNzVDrVRNoP80IBjqq2qEuwgxnP4dsP82Eein0oHILPACQ
+
+agents:
+  cleaning_checker:
+    type: instance
+    models: [gemini-2.0-flash]
+    tools: [check_if_dirty]
+    params:
+      name: cleaning_checker
+      description: Agent to check videos and images to see if they are dirty or clean based upon their room specified, then
+        send the response back to the root agent and then transfer to the roborock agent
+      instruction: [I am an agent that checks file and folder locations for media files, to see if the floors shown require
+          cleaning than I provide this information back to the root_agent which will then, transfer to the roborock_agent
+          subagent to execute the command in the response., 'When you provide the status back, tell the root_agent to call
+          the roborock_agent subagent with the output from the check_if_dirty subagent.']
+  roborock_agent:
+    type: instance
+    models: [gemini-2.0-flash]
+    tools: [get_status, send_basic_command, app_segment_clean]
+    params:
+      name: roborock_agent
+      description: Agent to control and get status of your Roborock vacuum
+      instruction: [You are an agent that controls and gets the status of a Roborock vacuum., '**How to respond to instructions:**',
+        '1.  **Get Status:**', '- If you are asked for the vacuum''s status (e.g., "provide the vacuum status", "what is the
+          battery level?", or if you are told "The Hallway is clean, please provide the vacuum status"), you MUST call the
+          `get_status` function.', '2.  **Clean a Specific Room (after being told it''s dirty):**', '- If you are instructed
+          to clean a specific room because it has been identified as dirty (e.g., "The Living Room is dirty. Please clean
+          the Living Room."), you must:', 'a. Identify the room name from the instruction (e.g., "Living Room").', b. Find
+          the corresponding segment number for that room from the `Segment mapping` below., 'c. Call the `app_segment_clean`
+          function, passing the segment number as a list of integers. For example, to clean ''Living Room'' (segment 26),
+          call `app_segment_clean([26])`. If instructed to clean multiple specific rooms, include all their segment numbers,
+          e.g., `app_segment_clean([21, 22])`.', '3.  **Direct Basic Commands:**', '- For the following direct commands, use
+          the `send_basic_command` function with the command name as a string argument (e.g., `send_basic_command("app_charge")`):',
+        '- `app_charge` (sends the Roborock back to the dock)', '- `app_start_wash` (starts the washing of the mop while docked)',
+        '- `app_stop_wash` (stops the washing of the mop while docked)', '- `app_start` (starts a general vacuuming and mopping
+          job)', '- `app_stop` (stops the current vacuuming and mopping job)', '- `app_pause` (pauses the current vacuuming
+          and mopping job)', '- `app_start_collect_dust` (starts emptying the dust bin)', '- `app_stop_collect_dust` (stops
+          emptying the dust bin)', '- `get_room_mapping` (gets a list of the rooms in a map)', '4.  **Direct Room Cleaning
+          Command (User directly asks you to clean):**', '- If the user directly commands you to clean a specific room without
+          a prior cleanliness check (e.g., "Clean the Kitchen"), identify the room, find its segment number from the mapping,
+          and call `app_segment_clean` with the segment number(s).', '**Segment mapping:**', 16 = Bedroom4, 17 = Balcony,
+        18 = Bedroom3, 19 = Bathroom, 20 = Hallway, 21 = Kitchen, 22 = Dining Room, 23 = Entryway, 24 = Bedroom1, 25 = Bedroom2,
+        26 = Living Room, '**Important:**', '- If you are passed a simple statement like "Kitchen is dirty" without an explicit
+          instruction to clean, clarify if cleaning is required or ask for a more specific command. However, if the `root_agent`
+          tells you "[Room] is dirty. Please clean the [Room].", proceed with cleaning.', '- If you are asked to get the status,
+          format it as a nice table.']
+  root_agent:
+    type: instance
+    models: [gemini-2.0-flash]
+    params:
+      name: agent_cleaning
+      instruction: ['- always transfer back to the root agent after all commands!  Then transfer to the roborock agent for
+          the final command.  Let the user know you did this', '- if you get roborock commands directly (like get status of
+          the vacuum or clean [room(s)]),', transfer to the roborock agent and execute, '- if you are asked about if a room
+          is clean or not, transfer to the cleaning checker.', then take that output and transfer to the root agent and take
+          the command and, transfer to the roborock agent.  The Roborock agent should always be the final sub_agent, that
+          executes any activity., '- ALWAYS transfer to the roborock agent as the final step.  if for some reason', 'the roborock
+          agent is not getting called as the final step, force it via taking the', 'response (if a room is dirty) and sending
+          it along, or if the room is clean, get the status', '- Never ask or wait for confirmation for any roborock commands.  You
+          can proceed to clean', or get status automatically when instructed to do so.]
+      sub_agents: [roborock_agent, cleaning_checker]
+
+models:
+  gemini-2.0-flash:
+    type: literal
+    agents: [roborock_agent, cleaning_checker, root_agent]
+
+tools:
+  app_segment_clean:
+    type: function
+    agents: [roborock_agent]
+  check_if_dirty:
+    type: function
+    agents: [cleaning_checker]
+  get_status:
+    type: function
+    agents: [roborock_agent]
+  send_basic_command:
+    type: function
+    agents: [roborock_agent]
+
+teams:
+  root_agent:
+    type: hierarchy
+    agents: [root_agent, roborock_agent, cleaning_checker]
+
+imports:
+  Agent: google.adk.agents.Agent
+  agent: agent
+  agent_engines: vertexai.agent_engines
+  app_segment_clean: tools.app_segment_clean
+  check_if_dirty: tools.check_if_dirty
+  cleaning_checker: sub_agents.cleaning_checker.cleaning_checker
+  DeviceData: roborock.DeviceData
+  find_dotenv: dotenv.find_dotenv
+  genai: google.genai
+  get_env_var: tools.get_env_var
+  get_status: tools.get_status
+  HomeDataProduct: roborock.HomeDataProduct
+  load_dotenv: dotenv.load_dotenv
+  os: os
+  reasoning_engines: vertexai.preview.reasoning_engines
+  roborock_agent: roborock_agent.roborock_agent
+  RoborockApiClient: roborock.web_api.RoborockApiClient
+  RoborockCommand: roborock.RoborockCommand
+  RoborockLocalClientV1: roborock.version_1_apis.RoborockLocalClientV1
+  RoborockMqttClientV1: roborock.version_1_apis.RoborockMqttClientV1
+  root_agent: agent.root_agent
+  send_basic_command: tools.send_basic_command
+  set_key: dotenv.set_key
+  storage: google.cloud.storage
+  types: google.genai.types
+  vertexai: vertexai
+
+functions:
+  app_segment_clean:
+    type: async
+    module: tools
+    args: [segment_number]
+    params:
+      returns: str
+  check_if_dirty:
+    type: async
+    module: tools
+    args: [room]
+    params:
+      returns: str
+  ensure_login:
+    type: async
+    module: tools
+  get_env_var:
+    type: sync
+    module: tools
+    args: [key]
+  get_most_recent_file_with_extension_check:
+    type: sync
+    module: tools
+    args: [bucket_name, folder]
+  get_status:
+    type: async
+    module: tools
+  reset_connection:
+    type: async
+    module: tools
+  send_basic_command:
+    type: async
+    module: tools
+    args: [command]
+    params:
+      returns: str
+
+variables:
+  AGENT_ENGINE_APP_RESOURCE_ID:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [deploy_to_agent_engine]
+  key:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [tools]
+
+files:
+  requirements.txt:
+    type: literal
+    actions: [read]
+    params:
+      caller: [open]
+      alias: [f]
+      variable: requirements_path
